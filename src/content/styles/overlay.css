@@ -1,0 +1,330 @@
+:root {
+    --vs-primary: #23b5b5;
+    --vs-bg: #121212;
+    --vs-card-bg: #1a1a1a;
+    --vs-text-main: #ffffff;
+    --vs-text-secondary: #aaaaaa;
+    --vs-border: #333333;
+}
+
+.viewstack-overlay {
+    font-family: 'Roboto', 'Inter', 'Arial', sans-serif;
+    color: var(--vs-text-main);
+    width: 380px;
+    padding: 24px;
+    border-radius: 24px;
+    background: var(--vs-bg);
+    border: 1px solid var(--vs-border);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-origin: top left;
+    z-index: 10000;
+}
+
+/* Header */
+.viewstack-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.viewstack-logo-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.viewstack-logo-icon {
+    width: 28px;
+    height: 28px;
+    background-color: #ff0000;
+    /* Placeholder for Red logo */
+    color: white;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 16px;
+}
+
+.viewstack-title-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.viewstack-brand {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.viewstack-subbrand {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--vs-text-secondary);
+}
+
+.viewstack-header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.viewstack-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    color: var(--vs-text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.viewstack-badge.active {
+    color: var(--vs-primary);
+    border: 1px solid var(--vs-primary);
+    background: rgba(35, 181, 181, 0.1);
+}
+
+/* Main Stats */
+.viewstack-main-stat {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.viewstack-stat-number {
+    font-size: 36px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+}
+
+.viewstack-stat-context {
+    font-size: 12px;
+    color: var(--vs-text-secondary);
+    margin-top: 6px;
+}
+
+.viewstack-btn-accent {
+    background: rgba(35, 181, 181, 0.1);
+    color: var(--vs-primary);
+    border: 1px solid var(--vs-primary);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Middle Card */
+.viewstack-middle-card {
+    background: var(--vs-card-bg);
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid var(--vs-border);
+}
+
+.viewstack-velocity-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.viewstack-velocity-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.viewstack-velocity-icon {
+    color: var(--vs-primary);
+}
+
+.viewstack-growth-status {
+    font-size: 12px;
+    color: #4caf50;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+
+.viewstack-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentColor;
+}
+
+/* Filter Tabs */
+.viewstack-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.viewstack-filter-tab {
+    background: #252525;
+    border: none;
+    color: var(--vs-text-secondary);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.viewstack-filter-tab.active {
+    color: var(--vs-primary);
+    border-bottom: 2px solid var(--vs-primary);
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    padding-bottom: 4px;
+}
+
+/* Graph Placeholder */
+.viewstack-graph-area {
+    height: 100px;
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+}
+
+/* Use SVG for graph in component */
+
+/* Insights */
+.viewstack-insights {
+    background: var(--vs-card-bg);
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid var(--vs-border);
+}
+
+.viewstack-insights-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.viewstack-insights-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.viewstack-insight-item {
+    font-size: 12px;
+    color: var(--vs-text-secondary);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.4;
+}
+
+.viewstack-insight-bullet {
+    min-width: 6px;
+    height: 6px;
+    background-color: var(--vs-primary);
+    border-radius: 50%;
+    margin-top: 5px;
+}
+
+.viewstack-insight-bullet.yellow {
+    background-color: #ffc107;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.viewstack-close-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--vs-card-bg);
+    border: 1px solid var(--vs-border);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* Bottom Card */
+.viewstack-bottom-card {
+    background: #000;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto;
+}
+
+.viewstack-video-thumb {
+    width: 60px;
+    height: 34px;
+    background: #333;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.viewstack-video-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.viewstack-video-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.viewstack-video-meta {
+    font-size: 10px;
+    color: var(--vs-text-secondary);
+}
+
+.viewstack-video-score {
+    background: #fcb103;
+    color: #000;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 12px;
+}

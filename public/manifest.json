@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "YT Insights",
+  "version": "1.0.0",
+  "description": "Tracks YouTube analytics such as views, trends, and comparisons.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "YT Insights"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ]
+}
