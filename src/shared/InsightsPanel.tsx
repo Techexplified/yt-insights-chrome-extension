@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { VideoData } from "./metrics";
 import { computeMetrics } from "./metrics";
-import { EmptyState, Icon, YouTubeLogo } from "./ui";
+import { EmptyState, Icon, LoadingState, YouTubeLogo } from "./ui";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { AudienceTab } from "./tabs/AudienceTab";
 import { CompareTab } from "./tabs/CompareTab";
@@ -44,7 +44,12 @@ export const InsightsPanel = ({
 
   const renderTab = () => {
     if (needsVideo && loading) {
-      return <EmptyState text="Loading video data…" />;
+      return (
+        <LoadingState
+          text="Loading video data…"
+          sub="Fetching the latest stats for this video"
+        />
+      );
     }
     if (needsVideo && (!data || !metrics)) {
       return <EmptyState text="Open a YouTube video to see its stats." />;

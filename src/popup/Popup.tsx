@@ -27,23 +27,8 @@ const Popup = () => {
     });
   }, []);
 
-  if (!loaded) {
-    return (
-      <div
-        style={{
-          padding: 20,
-          background: "#0c0f15",
-          color: "#fff",
-          fontFamily: "sans-serif",
-        }}
-      >
-        Loading...
-      </div>
-    );
-  }
-
   const data: VideoData | null = ytStats && ytStats.isOnVideo ? ytStats : null;
-  return <InsightsPanel data={data} variant="popup" />;
+  return <InsightsPanel data={data} loading={!loaded} variant="popup" />;
 };
 
 export default Popup;
