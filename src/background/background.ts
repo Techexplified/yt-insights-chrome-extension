@@ -50,6 +50,7 @@ chrome.runtime.onMessage.addListener(
               data: {
                 views: d.views || "0",
                 likes: d.likes || "0",
+                comments: d.comments,
                 subscribers: d.subscribers || "0",
                 title: d.title || "Unknown Video",
                 date: d.date,

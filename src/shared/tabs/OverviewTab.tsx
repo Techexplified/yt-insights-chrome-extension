@@ -3,6 +3,7 @@ import type { ComputedMetrics, Range, VideoData } from "../metrics";
 import {
   RANGES,
   buildTrend,
+  engagementNote,
   explainPerformance,
   formatLarge,
   getGrowthStatus,
@@ -44,8 +45,9 @@ export const OverviewTab = ({ data, metrics, onNavigate }: Props) => {
   const velocityTone = /Viral|Trending|Rising/.test(growth.label)
     ? "up"
     : "flat";
+  const eng = metrics.engagement;
   const engagementTone =
-    metrics.engagement >= 4 ? "up" : metrics.engagement >= 2 ? "flat" : "down";
+    eng === null ? "flat" : eng >= 4 ? "up" : eng >= 2 ? "flat" : "down";
 
   const drivers = [
     {
@@ -56,12 +58,17 @@ export const OverviewTab = ({ data, metrics, onNavigate }: Props) => {
     {
       tone: engagementTone,
       title:
-        engagementTone === "up"
-          ? "Strong engagement"
-          : engagementTone === "flat"
-            ? "Typical engagement"
-            : "Low engagement",
-      sub: `${metrics.engagement.toFixed(1)}% like rate (${formatLarge(metrics.likeCount)} likes)`,
+        eng === null
+          ? "Engagement unavailable"
+          : engagementTone === "up"
+            ? "Strong engagement"
+            : engagementTone === "flat"
+              ? "Typical engagement"
+              : "Low engagement",
+      sub:
+        eng === null
+          ? engagementNote(metrics)
+          : `${eng.toFixed(1)}% (likes + comments ÷ views)`,
     },
   ];
 
@@ -89,9 +96,13 @@ export const OverviewTab = ({ data, metrics, onNavigate }: Props) => {
         <div className="yti-stat">
           <Icon name="heart" size={22} className="yti-stat-icon" />
           <div>
-            <strong>{metrics.engagement.toFixed(1)}%</strong>
+            <strong>
+              {metrics.engagement !== null
+                ? `${metrics.engagement.toFixed(1)}%`
+                : "N/A"}
+            </strong>
             <span>Engagement rate</span>
-            <em>{formatLarge(metrics.likeCount)} likes</em>
+            <em>{engagementNote(metrics)}</em>
           </div>
         </div>
         <div className="yti-stat">

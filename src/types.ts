@@ -31,6 +31,7 @@ export interface YouTubeStats {
   thumbnailUrl?: string; // New
   date?: string; // New
   likes?: string; // New
+  comments?: string;
 }
 
 export interface ExtensionMessage {

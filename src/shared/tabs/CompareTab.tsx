@@ -189,8 +189,8 @@ export const CompareTab = ({
           {
             icon: "heart",
             label: "Engagement rate",
-            l: left.m.engagement,
-            r: right.m.engagement,
+            l: left.m.engagement ?? undefined,
+            r: right.m.engagement ?? undefined,
             fmt: (v) => v.toFixed(1) + "%",
           },
           { icon: "users", label: "Subscriber conversion", sample: true },
@@ -215,11 +215,10 @@ export const CompareTab = ({
       b = B.m;
     // Virality is only compared when both videos have a score.
     const scoreComparable = a.scoreValue !== null && b.scoreValue !== null;
-    const wins = [
-      a.viewCount > b.viewCount,
-      a.velocity > b.velocity,
-      a.engagement > b.engagement,
-    ];
+    // Engagement is only compared when both videos have a rate.
+    const engComparable = a.engagement !== null && b.engagement !== null;
+    const wins = [a.viewCount > b.viewCount, a.velocity > b.velocity];
+    if (engComparable) wins.push(a.engagement! > b.engagement!);
     if (scoreComparable) wins.push(a.scoreValue! > b.scoreValue!);
     const leader: "A" | "B" =
       wins.filter(Boolean).length * 2 >= wins.length ? "A" : "B";
@@ -230,9 +229,9 @@ export const CompareTab = ({
       ahead.push(
         `views per day (${formatLarge(L.velocity)} vs ${formatLarge(O.velocity)})`,
       );
-    if (L.engagement > O.engagement)
+    if (engComparable && L.engagement! > O.engagement!)
       ahead.push(
-        `engagement (${L.engagement.toFixed(1)}% vs ${O.engagement.toFixed(1)}%)`,
+        `engagement (${L.engagement!.toFixed(1)}% vs ${O.engagement!.toFixed(1)}%)`,
       );
     if (scoreComparable && L.scoreValue! > O.scoreValue!)
       ahead.push(`virality score (${L.score}x vs ${O.score}x)`);
@@ -240,7 +239,12 @@ export const CompareTab = ({
       ahead.push(
         `total views (${formatLarge(L.viewCount)} vs ${formatLarge(O.viewCount)})`,
       );
-    const engLead = a.engagement >= b.engagement ? "A" : "B";
+    let engTakeaway =
+      "Engagement rate can't be compared: likes or comment count is unavailable for one video.";
+    if (engComparable) {
+      const engLead = a.engagement! >= b.engagement! ? "A" : "B";
+      engTakeaway = `Video ${engLead} has the higher engagement rate (${Math.max(a.engagement!, b.engagement!).toFixed(1)}% vs ${Math.min(a.engagement!, b.engagement!).toFixed(1)}%).`;
+    }
     const reachLead = a.viewCount >= b.viewCount ? "A" : "B";
     analysis = {
       leader,
@@ -248,7 +252,7 @@ export const CompareTab = ({
         ? `Video ${leader} is ahead on ${joinList(ahead)}.`
         : `Video ${leader} is slightly ahead overall.`,
       takeaways: [
-        `Video ${engLead} has the higher engagement rate (${Math.max(a.engagement, b.engagement).toFixed(1)}% vs ${Math.min(a.engagement, b.engagement).toFixed(1)}%).`,
+        engTakeaway,
         `Video ${reachLead} has the larger overall reach (${formatLarge(Math.max(a.viewCount, b.viewCount))} views).`,
       ],
     };
@@ -394,6 +398,18 @@ export const CompareTab = ({
                 })}
               </tbody>
             </table>
+            {(metrics.engagement === null ||
+              benchmark?.engagement === null) && (
+              <p className="yti-note left">
+                Engagement rate: N/A for{" "}
+                {metrics.engagement === null && benchmark?.engagement === null
+                  ? "either video"
+                  : metrics.engagement === null
+                    ? "Video A"
+                    : "Video B"}{" "}
+                (likes hidden or comment count unavailable).
+              </p>
+            )}
             {(metrics.scoreValue === null ||
               benchmark?.scoreValue === null) && (
               <p className="yti-note left">

@@ -9,6 +9,7 @@ export interface YouTubeVideoData {
   thumbnailUrl: string;
   date: string;
   likes: string;
+  comments: string; // '' = unknown
 }
 
 export const getVideoData = (): YouTubeVideoData | null => {
@@ -80,6 +81,28 @@ export const getVideoData = (): YouTubeVideoData | null => {
     }
 
     likes = likes.trim() || "0";
+
+    // Comment count. The comments section loads lazily, so this DOM read is only a fallback
+    // for the fresh page fetch below ('' means unknown, '0' means comments are turned off).
+    let comments = "";
+    const commentsHeader =
+      document.querySelector(
+        "ytd-comments-header-renderer #count .count-text",
+      ) ||
+      document.querySelector("ytd-comments-header-renderer #count") ||
+      document.querySelector("ytd-comments-entry-point-header-renderer #count");
+    const commentsMatch =
+      commentsHeader?.textContent?.match(/([\d.,]+[KMB]?)/i);
+    if (commentsMatch) {
+      comments = commentsMatch[1];
+    } else if (
+      /turned off/i.test(
+        document.querySelector("ytd-comments#comments ytd-message-renderer")
+          ?.textContent || "",
+      )
+    ) {
+      comments = "0";
+    }
 
     // Meta tags are NOT refreshed on YouTube's SPA navigation, so only trust them
     // when the page's own URL tags point at the current video.
@@ -188,6 +211,7 @@ export const getVideoData = (): YouTubeVideoData | null => {
       thumbnailUrl,
       date,
       likes: likes || "0",
+      comments,
     };
   } catch (e) {
     console.error("Error scraping YouTube data:", e);
@@ -234,6 +258,11 @@ export const getFreshVideoData = async (): Promise<YouTubeVideoData | null> => {
   if (!remote) return dom;
 
   const good = (v: string) => !!v && v !== "0";
+  const comments = remote.comments || dom.comments;
+  if (!comments)
+    console.log(
+      "ViewStack: comment count not found, engagement rate will show N/A",
+    );
   return {
     ...dom,
     title: remote.title || dom.title,
@@ -244,5 +273,6 @@ export const getFreshVideoData = async (): Promise<YouTubeVideoData | null> => {
       ? remote.subscribers
       : dom.subscribers,
     date: remote.date || dom.date,
+    comments,
   };
 };

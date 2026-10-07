@@ -8,6 +8,7 @@ export interface WatchPageData {
   likes: string;
   subscribers: string;
   channelName: string;
+  comments: string; // '' = unknown, '0' = none / comments turned off
 }
 
 const decodeEntities = (s: string): string =>
@@ -33,6 +34,34 @@ const cleanChannel = (raw: string): string => {
     : "";
 };
 
+// Where YouTube puts the comment count in the page data (tried in order; formats vary by layout).
+const NUM = "([\\d,.]+[KMB]?)";
+const COMMENT_PATTERNS: RegExp[] = [
+  new RegExp(
+    `"commentsEntryPointHeaderRenderer":[\\s\\S]{0,2500}?"commentCount":\\{"simpleText":"${NUM}"`,
+  ),
+  new RegExp(
+    `"commentsEntryPointHeaderRenderer":[\\s\\S]{0,2500}?"contextualInfo":\\{"runs":\\[\\{"text":"${NUM}"`,
+  ),
+  new RegExp(
+    `"engagementPanelTitleHeaderRenderer":\\{"title":\\{"runs":\\[\\{"text":"Comments"\\}\\][\\s\\S]{0,400}?"contextualInfo":\\{"runs":\\[\\{"text":"${NUM}"`,
+  ),
+  new RegExp(
+    `"commentsHeaderRenderer":[\\s\\S]{0,1500}?"countText":\\{"runs":\\[\\{"text":"${NUM}"`,
+  ),
+  new RegExp(`"commentCount":\\{"simpleText":"${NUM}"\\}`),
+];
+
+const parseCommentCount = (html: string): string => {
+  for (const p of COMMENT_PATTERNS) {
+    const m = html.match(p);
+    if (m) return m[1];
+  }
+  // Comments disabled by the creator: that is a real zero, not "unknown".
+  if (/Comments are turned off/i.test(html)) return "0";
+  return "";
+};
+
 // Missing fields are returned as empty strings so callers can fall back to other sources.
 export const parseWatchHtml = (html: string): WatchPageData => {
   const titleMatch = html.match(/<meta name="title" content="(.*?)">/);
@@ -56,5 +85,6 @@ export const parseWatchHtml = (html: string): WatchPageData => {
     likes: likeMatch ? likeMatch[1] : "",
     subscribers: subMatch ? subMatch[1] : "",
     channelName: channelMatch ? cleanChannel(channelMatch[1]) : "",
+    comments: parseCommentCount(html),
   };
 };

@@ -9,15 +9,18 @@ export interface VideoData {
   thumbnailUrl?: string;
   date?: string;
   likes?: string;
+  comments?: string; // '' / undefined = unknown, '0' = none or comments turned off
 }
 
 export interface ComputedMetrics {
   viewCount: number;
   subCount: number;
   likeCount: number;
+  commentCount: number | null; // null when unknown
   daysSince: number;
   velocity: number;
-  engagement: number;
+  // Engagement rate = (likes + comments) ÷ views × 100. null when likes are hidden or comments are unknown.
+  engagement: number | null;
   // Virality Score = views ÷ channel subscribers. null when the subscriber count is missing.
   score: string | null;
   scoreValue: number | null;
@@ -74,6 +77,7 @@ export const computeMetrics = (d: VideoData): ComputedMetrics => {
   const viewCount = parseCount(d.views);
   const subCount = parseCount(d.subscribers);
   const likeCount = parseCount(d.likes);
+  const commentCount = d.comments ? parseCount(d.comments) : null;
 
   const now = new Date();
   let date = new Date(d.date || "");
@@ -85,7 +89,11 @@ export const computeMetrics = (d: VideoData): ComputedMetrics => {
     Math.floor((now.getTime() - date.getTime()) / 86400000),
   );
   const velocity = Math.round(viewCount / daysSince);
-  const engagement = viewCount > 0 ? (likeCount / viewCount) * 100 : 0;
+  // Likes of 0 means hidden/unavailable (the scraper defaults missing likes to '0').
+  const engagement =
+    viewCount > 0 && likeCount > 0 && commentCount !== null
+      ? ((likeCount + commentCount) / viewCount) * 100
+      : null;
 
   const scoreValue = subCount > 0 ? viewCount / subCount : null;
 
@@ -93,6 +101,7 @@ export const computeMetrics = (d: VideoData): ComputedMetrics => {
     viewCount,
     subCount,
     likeCount,
+    commentCount,
     daysSince,
     velocity,
     engagement,
@@ -101,15 +110,32 @@ export const computeMetrics = (d: VideoData): ComputedMetrics => {
   };
 };
 
+// Short reason / detail line for the engagement card.
+export const engagementNote = (m: ComputedMetrics): string => {
+  if (m.viewCount <= 0) return "No views yet";
+  if (m.likeCount <= 0) return "Likes hidden or unavailable";
+  if (m.commentCount === null) return "Comment count unavailable";
+  return `${formatLarge(m.likeCount)} likes · ${formatLarge(m.commentCount)} comments`;
+};
+
 export const NO_SCORE_TEXT = "Not enough data available";
 
-// Re-derive the virality score for metrics saved earlier (older saves used a 1000-subscriber fallback).
+// Re-derive the score fields for metrics saved earlier: older saves used a 1000-subscriber
+// fallback for virality and a likes-only engagement rate (no comment count stored).
 export const withCurrentScore = <T extends ComputedMetrics>(m: T): T => {
   const scoreValue = m.subCount > 0 ? m.viewCount / m.subCount : null;
+  const commentCount =
+    (m as { commentCount?: number | null }).commentCount ?? null;
+  const engagement =
+    m.viewCount > 0 && m.likeCount > 0 && commentCount !== null
+      ? ((m.likeCount + commentCount) / m.viewCount) * 100
+      : null;
   return {
     ...m,
     scoreValue,
     score: scoreValue !== null ? scoreValue.toFixed(1) : null,
+    commentCount,
+    engagement,
   };
 };
 
@@ -146,7 +172,7 @@ export const getGrowthStatus = (
     return { label: "🚀 Trending", color: "#34d16f" };
   if (daysSince < 7 && velocity > 100)
     return { label: "✨ New & Rising", color: "#f5b83d" };
-  if (m.engagement > 8)
+  if (m.engagement !== null && m.engagement > 8)
     return { label: "💎 High Engagement", color: "#a56bff" };
   return { label: "● Stable Growth", color: "#8b93a3" };
 };
@@ -162,9 +188,9 @@ export const explainPerformance = (
     );
   if (/Viral|Trending|Rising/.test(growth))
     parts.push(`it is gaining about ${formatLarge(m.velocity)} views per day`);
-  if (m.engagement >= 4)
+  if (m.engagement !== null && m.engagement >= 4)
     parts.push(
-      `viewers are engaging strongly (${m.engagement.toFixed(1)}% like rate)`,
+      `viewers are engaging strongly (${m.engagement.toFixed(1)}% engagement rate)`,
     );
   if (parts.length) {
     return {
@@ -176,7 +202,7 @@ export const explainPerformance = (
   return {
     good: false,
     title: "How is this video performing?",
-    text: `This video is averaging ${formatLarge(m.velocity)} views per day with a ${m.engagement.toFixed(1)}% like rate. No standout growth signals yet.`,
+    text: `This video is averaging ${formatLarge(m.velocity)} views per day${m.engagement !== null ? ` with a ${m.engagement.toFixed(1)}% engagement rate` : ""}. No standout growth signals yet.`,
   };
 };
 

@@ -28,7 +28,7 @@ export const VideoHeader = ({
       `📺 ${data.title ?? ""}`,
       `👀 Views: ${formatLarge(metrics.viewCount)}`,
       `⚡ Velocity: ${formatLarge(metrics.velocity)}/day`,
-      `💗 Engagement: ${metrics.engagement.toFixed(2)}%`,
+      `💗 Engagement: ${metrics.engagement !== null ? metrics.engagement.toFixed(2) + "%" : "N/A"}`,
       `💎 Rank: ${tier ? tier.label : "Not enough data available"}`,
       `🚀 Status: ${getGrowthStatus(metrics).label}`,
       `📝 ${explainPerformance(metrics).text}`,
