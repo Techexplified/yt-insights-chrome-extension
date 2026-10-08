@@ -10,7 +10,7 @@ import {
   withCurrentScore,
 } from "../metrics";
 import type { IconName } from "../ui";
-import { Card, Icon, SampleBadge, SoonButton } from "../ui";
+import { Card, EstimatedBadge, Icon, SampleBadge, SoonButton } from "../ui";
 
 interface Side {
   label: string;
@@ -27,6 +27,7 @@ interface Row {
   r?: number;
   fmt?: (v: number) => string;
   sample?: boolean;
+  estimated?: boolean;
 }
 
 const looksLikeYouTube = (s: string) => /youtube\.com|youtu\.be/i.test(s);
@@ -192,6 +193,22 @@ export const CompareTab = ({
             l: left.m.engagement ?? undefined,
             r: right.m.engagement ?? undefined,
             fmt: (v) => v.toFixed(1) + "%",
+          },
+          {
+            icon: "heart",
+            label: "Likes per 1K views",
+            l: left.m.likesPer1K ?? undefined,
+            r: right.m.likesPer1K ?? undefined,
+            fmt: (v) => v.toFixed(1),
+            estimated: true,
+          },
+          {
+            icon: "message",
+            label: "Comments per 1K views",
+            l: left.m.commentsPer1K ?? undefined,
+            r: right.m.commentsPer1K ?? undefined,
+            fmt: (v) => v.toFixed(1),
+            estimated: true,
           },
           { icon: "users", label: "Subscriber conversion", sample: true },
           {
@@ -375,6 +392,7 @@ export const CompareTab = ({
                         <Icon name={r.icon} size={15} className="yti-muted" />{" "}
                         {r.label}
                         {r.sample && <SampleBadge />}
+                        {r.estimated && <EstimatedBadge />}
                       </td>
                       <td>{r.fmt && r.l !== undefined ? r.fmt(r.l) : "—"}</td>
                       <td>{r.fmt && r.r !== undefined ? r.fmt(r.r) : "—"}</td>

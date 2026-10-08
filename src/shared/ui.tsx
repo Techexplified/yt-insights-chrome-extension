@@ -173,10 +173,20 @@ export const SampleBadge = () => (
   </span>
 );
 
+export const EstimatedBadge = () => (
+  <span
+    className="yti-est"
+    title="A ratio calculated from public counts. It is not YouTube's watch-time or retention data."
+  >
+    Estimated
+  </span>
+);
+
 export const Card = ({
   title,
   icon,
   sample,
+  estimated,
   action,
   info,
   className = "",
@@ -185,6 +195,7 @@ export const Card = ({
   title?: ReactNode;
   icon?: ReactNode;
   sample?: boolean;
+  estimated?: boolean;
   action?: ReactNode;
   info?: boolean;
   className?: string;
@@ -198,6 +209,7 @@ export const Card = ({
           {title}
           {info && <Icon name="info" size={13} className="yti-info" />}
           {sample && <SampleBadge />}
+          {estimated && <EstimatedBadge />}
         </h3>
         {action}
       </header>

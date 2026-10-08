@@ -245,6 +245,55 @@ export const OverviewTab = ({ data, metrics, onNavigate }: Props) => {
           </ul>
         </Card>
       </div>
+
+      <Card title="Engagement per 1K views" info estimated>
+        <div className="yti-per1k">
+          <div className="yti-per1k-cell">
+            <span className="yti-round red">
+              <Icon name="heart" size={20} />
+            </span>
+            <div>
+              <strong>
+                {metrics.likesPer1K !== null
+                  ? metrics.likesPer1K.toFixed(1)
+                  : "N/A"}
+              </strong>
+              <span>likes per 1K views</span>
+              {metrics.likesPer1K === null && (
+                <small>
+                  {metrics.viewCount <= 0
+                    ? "No views yet"
+                    : "Likes hidden or unavailable"}
+                </small>
+              )}
+            </div>
+          </div>
+          <div className="yti-per1k-cell">
+            <span className="yti-round purple">
+              <Icon name="message" size={20} />
+            </span>
+            <div>
+              <strong>
+                {metrics.commentsPer1K !== null
+                  ? metrics.commentsPer1K.toFixed(1)
+                  : "N/A"}
+              </strong>
+              <span>comments per 1K views</span>
+              {metrics.commentsPer1K === null && (
+                <small>
+                  {metrics.viewCount <= 0
+                    ? "No views yet"
+                    : "Comment count unavailable"}
+                </small>
+              )}
+            </div>
+          </div>
+        </div>
+        <p className="yti-note left">
+          Watch time and retention are private to the channel owner, so these
+          ratios are shown instead.
+        </p>
+      </Card>
     </>
   );
 };

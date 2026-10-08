@@ -21,6 +21,9 @@ export interface ComputedMetrics {
   velocity: number;
   // Engagement rate = (likes + comments) ÷ views × 100. null when likes are hidden or comments are unknown.
   engagement: number | null;
+  // Engagement per 1K views: likes ÷ views × 1000 and comments ÷ views × 1000 (null when unknown).
+  likesPer1K: number | null;
+  commentsPer1K: number | null;
   // Virality Score = views ÷ channel subscribers. null when the subscriber count is missing.
   score: string | null;
   scoreValue: number | null;
@@ -36,6 +39,10 @@ export interface BenchmarkData extends ComputedMetrics {
 export const BENCHMARK_KEY = "viewstat_benchmark";
 
 // ---------- Parsing / formatting ----------
+
+// count ÷ views × 1000, or null when either side is unknown.
+const per1K = (count: number | null, views: number): number | null =>
+  count !== null && views > 0 ? (count / views) * 1000 : null;
 
 export const parseCount = (str?: string): number => {
   if (!str) return 0;
@@ -105,6 +112,8 @@ export const computeMetrics = (d: VideoData): ComputedMetrics => {
     daysSince,
     velocity,
     engagement,
+    likesPer1K: per1K(likeCount > 0 ? likeCount : null, viewCount), // 0 likes = hidden/unavailable
+    commentsPer1K: per1K(commentCount, viewCount),
     score: scoreValue !== null ? scoreValue.toFixed(1) : null,
     scoreValue,
   };
@@ -136,6 +145,8 @@ export const withCurrentScore = <T extends ComputedMetrics>(m: T): T => {
     score: scoreValue !== null ? scoreValue.toFixed(1) : null,
     commentCount,
     engagement,
+    likesPer1K: per1K(m.likeCount > 0 ? m.likeCount : null, m.viewCount),
+    commentsPer1K: per1K(commentCount, m.viewCount),
   };
 };
 

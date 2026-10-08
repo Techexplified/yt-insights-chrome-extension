@@ -1005,3 +1005,52 @@
     transform: rotate(360deg);
   }
 }
+
+/* Estimated badge + per-1K card */
+.yti-est {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6aa8ff;
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.1);
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-left: 4px;
+}
+.yti-per1k {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.yti-per1k-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel2);
+  border-radius: 12px;
+  padding: 14px;
+}
+.yti-per1k-cell > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.yti-per1k-cell strong {
+  font-size: 22px;
+  font-weight: 600;
+}
+.yti-per1k-cell span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.yti-per1k-cell small {
+  color: var(--muted);
+  font-size: 11px;
+}
+@media (max-width: 720px) {
+  .yti-per1k {
+    grid-template-columns: 1fr;
+  }
+}
