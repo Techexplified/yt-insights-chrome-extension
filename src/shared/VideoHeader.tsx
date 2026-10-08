@@ -30,6 +30,7 @@ export const VideoHeader = ({
       `⚡ Velocity: ${formatLarge(metrics.velocity)}/day`,
       `💗 Engagement: ${metrics.engagement !== null ? metrics.engagement.toFixed(2) + "%" : "N/A"}`,
       `📊 Per 1K views: ${metrics.likesPer1K !== null ? metrics.likesPer1K.toFixed(1) : "N/A"} likes, ${metrics.commentsPer1K !== null ? metrics.commentsPer1K.toFixed(1) : "N/A"} comments (estimated)`,
+      `📈 vs channel: ${metrics.viewsVsChannel !== null ? metrics.viewsVsChannel.toFixed(1) + "×" : "N/A"} views, ${metrics.velocityVsChannel !== null ? metrics.velocityVsChannel.toFixed(1) + "×" : "N/A"} views/day (estimated)`,
       `💎 Rank: ${tier ? tier.label : "Not enough data available"}`,
       `🚀 Status: ${getGrowthStatus(metrics).label}`,
       `📝 ${explainPerformance(metrics).text}`,

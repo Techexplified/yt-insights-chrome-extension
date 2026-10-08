@@ -1,5 +1,6 @@
 import type { ExtensionMessage, ExtensionState, AnyEvent } from "../types";
 import { parseWatchHtml } from "../shared/watchPage";
+import { fetchChannelBaseline } from "../shared/channelFeed";
 
 let state: ExtensionState = {
   isActive: true,
@@ -37,13 +38,18 @@ chrome.runtime.onMessage.addListener(
       const url = message.payload as string;
       fetch(url)
         .then((res) => res.text())
-        .then((html) => {
+        .then(async (html) => {
           try {
             const d = parseWatchHtml(html);
             const idMatch = url.match(
               /[?&]v=([\w-]{11})|youtu\.be\/([\w-]{11})/,
             );
             const videoId = idMatch ? idMatch[1] || idMatch[2] : "";
+
+            const baseline =
+              d.channelId && videoId
+                ? await fetchChannelBaseline(d.channelId, videoId)
+                : null;
 
             sendResponse({
               success: true,
@@ -59,6 +65,7 @@ chrome.runtime.onMessage.addListener(
                   : "",
                 channelName: d.channelName,
                 videoId,
+                baseline,
               },
             });
           } catch (e) {

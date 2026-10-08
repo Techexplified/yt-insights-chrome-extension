@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { BenchmarkData, ComputedMetrics, VideoData } from "../metrics";
 import {
   BENCHMARK_KEY,
+  NO_BASELINE_TEXT,
   NO_SCORE_TEXT,
   computeMetrics,
   formatLarge,
@@ -193,6 +194,22 @@ export const CompareTab = ({
             l: left.m.engagement ?? undefined,
             r: right.m.engagement ?? undefined,
             fmt: (v) => v.toFixed(1) + "%",
+          },
+          {
+            icon: "eye",
+            label: "Views vs channel median",
+            l: left.m.viewsVsChannel ?? undefined,
+            r: right.m.viewsVsChannel ?? undefined,
+            fmt: (v) => v.toFixed(1) + "×",
+            estimated: true,
+          },
+          {
+            icon: "bars",
+            label: "Views/day vs channel median",
+            l: left.m.velocityVsChannel ?? undefined,
+            r: right.m.velocityVsChannel ?? undefined,
+            fmt: (v) => v.toFixed(1) + "×",
+            estimated: true,
           },
           {
             icon: "heart",
@@ -416,6 +433,19 @@ export const CompareTab = ({
                 })}
               </tbody>
             </table>
+            {(metrics.viewsVsChannel === null ||
+              benchmark?.viewsVsChannel === null) && (
+              <p className="yti-note left">
+                Channel comparison: {NO_BASELINE_TEXT.toLowerCase()} for{" "}
+                {metrics.viewsVsChannel === null &&
+                benchmark?.viewsVsChannel === null
+                  ? "either video"
+                  : metrics.viewsVsChannel === null
+                    ? "Video A"
+                    : "Video B"}
+                .
+              </p>
+            )}
             {(metrics.engagement === null ||
               benchmark?.engagement === null) && (
               <p className="yti-note left">

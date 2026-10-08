@@ -8,6 +8,7 @@ import {
   formatLarge,
   getGrowthStatus,
   getRankTier,
+  NO_BASELINE_TEXT,
   NO_SCORE_TEXT,
   rangeDays,
   xLabelsFor,
@@ -42,9 +43,18 @@ export const OverviewTab = ({ data, metrics, onNavigate }: Props) => {
     };
   }, [range, metrics.viewCount, metrics.daysSince]);
 
-  const velocityTone = /Viral|Trending|Rising/.test(growth.label)
-    ? "up"
-    : "flat";
+  // Velocity compared with the channel's typical video when we have a baseline; otherwise the growth label.
+  const vsCh = metrics.velocityVsChannel;
+  const velocityTone =
+    vsCh !== null
+      ? vsCh >= 1.5
+        ? "up"
+        : vsCh >= 0.7
+          ? "flat"
+          : "down"
+      : /Viral|Trending|Rising/.test(growth.label)
+        ? "up"
+        : "flat";
   const eng = metrics.engagement;
   const engagementTone =
     eng === null ? "flat" : eng >= 4 ? "up" : eng >= 2 ? "flat" : "down";
@@ -52,8 +62,18 @@ export const OverviewTab = ({ data, metrics, onNavigate }: Props) => {
   const drivers = [
     {
       tone: velocityTone,
-      title: "Views velocity",
-      sub: `About ${formatLarge(metrics.velocity)} views per day since publishing`,
+      title:
+        vsCh === null
+          ? "Views velocity"
+          : velocityTone === "up"
+            ? "High velocity"
+            : velocityTone === "flat"
+              ? "Typical velocity"
+              : "Below-average velocity",
+      sub:
+        vsCh === null
+          ? `About ${formatLarge(metrics.velocity)} views per day since publishing`
+          : `${vsCh.toFixed(1)}× this channel's typical views/day`,
     },
     {
       tone: engagementTone,
@@ -245,6 +265,48 @@ export const OverviewTab = ({ data, metrics, onNavigate }: Props) => {
           </ul>
         </Card>
       </div>
+
+      <Card title="Compared to this channel" info estimated>
+        <div className="yti-per1k">
+          <div className="yti-per1k-cell">
+            <span className="yti-round blue">
+              <Icon name="eye" size={20} />
+            </span>
+            <div>
+              <strong>
+                {metrics.viewsVsChannel !== null
+                  ? `${metrics.viewsVsChannel.toFixed(1)}×`
+                  : "N/A"}
+              </strong>
+              <span>views vs a typical video</span>
+              {metrics.viewsVsChannel === null && (
+                <small>{NO_BASELINE_TEXT}</small>
+              )}
+            </div>
+          </div>
+          <div className="yti-per1k-cell">
+            <span className="yti-round green">
+              <Icon name="trend" size={20} />
+            </span>
+            <div>
+              <strong>
+                {metrics.velocityVsChannel !== null
+                  ? `${metrics.velocityVsChannel.toFixed(1)}×`
+                  : "N/A"}
+              </strong>
+              <span>views/day vs a typical video</span>
+              {metrics.velocityVsChannel === null && (
+                <small>{NO_BASELINE_TEXT}</small>
+              )}
+            </div>
+          </div>
+        </div>
+        <p className="yti-note left">
+          {metrics.baselineSample !== null
+            ? `Typical = the median of this channel's last ${metrics.baselineSample} uploads older than 3 days (Shorts included if the channel posts them).`
+            : "Needs at least 3 recent uploads older than 3 days from this channel."}
+        </p>
+      </Card>
 
       <Card title="Engagement per 1K views" info estimated>
         <div className="yti-per1k">

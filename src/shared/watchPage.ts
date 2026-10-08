@@ -8,6 +8,7 @@ export interface WatchPageData {
   likes: string;
   subscribers: string;
   channelName: string;
+  channelId: string; // 'UC...' (needed for the channel RSS feed)
   comments: string; // '' = unknown, '0' = none / comments turned off
 }
 
@@ -52,6 +53,20 @@ const COMMENT_PATTERNS: RegExp[] = [
   new RegExp(`"commentCount":\\{"simpleText":"${NUM}"\\}`),
 ];
 
+const CHANNEL_ID_PATTERNS: RegExp[] = [
+  /"videoDetails":\{[\s\S]{0,4000}?"channelId":"(UC[\w-]{22})"/,
+  /"externalChannelId":"(UC[\w-]{22})"/,
+  /itemprop="channelId" content="(UC[\w-]{22})"/,
+];
+
+const parseChannelId = (html: string): string => {
+  for (const p of CHANNEL_ID_PATTERNS) {
+    const m = html.match(p);
+    if (m) return m[1];
+  }
+  return "";
+};
+
 const parseCommentCount = (html: string): string => {
   for (const p of COMMENT_PATTERNS) {
     const m = html.match(p);
@@ -86,5 +101,6 @@ export const parseWatchHtml = (html: string): WatchPageData => {
     subscribers: subMatch ? subMatch[1] : "",
     channelName: channelMatch ? cleanChannel(channelMatch[1]) : "",
     comments: parseCommentCount(html),
+    channelId: parseChannelId(html),
   };
 };

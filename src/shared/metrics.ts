@@ -1,5 +1,7 @@
 // Shared data types + metric helpers used by both the popup and the on-page overlay.
 
+import type { ChannelBaseline } from "./channelFeed";
+
 export interface VideoData {
   videoId?: string;
   title?: string;
@@ -10,6 +12,7 @@ export interface VideoData {
   date?: string;
   likes?: string;
   comments?: string; // '' / undefined = unknown, '0' = none or comments turned off
+  baseline?: ChannelBaseline | null; // channel medians (RSS feed); null/undefined = not enough data
 }
 
 export interface ComputedMetrics {
@@ -21,6 +24,10 @@ export interface ComputedMetrics {
   velocity: number;
   // Engagement rate = (likes + comments) ÷ views × 100. null when likes are hidden or comments are unknown.
   engagement: number | null;
+  // Compared with the channel's typical video (median of its recent uploads). null = not enough data.
+  viewsVsChannel: number | null; // total views ÷ median views, e.g. 2.3 = 2.3x a typical video
+  velocityVsChannel: number | null; // views/day ÷ median views/day, e.g. 2.1 = 2.1x faster
+  baselineSample: number | null; // how many channel videos the medians are based on
   // Engagement per 1K views: likes ÷ views × 1000 and comments ÷ views × 1000 (null when unknown).
   likesPer1K: number | null;
   commentsPer1K: number | null;
@@ -103,6 +110,7 @@ export const computeMetrics = (d: VideoData): ComputedMetrics => {
       : null;
 
   const scoreValue = subCount > 0 ? viewCount / subCount : null;
+  const baseline = d.baseline ?? null;
 
   return {
     viewCount,
@@ -112,6 +120,15 @@ export const computeMetrics = (d: VideoData): ComputedMetrics => {
     daysSince,
     velocity,
     engagement,
+    viewsVsChannel:
+      baseline && baseline.medianViews > 0
+        ? viewCount / baseline.medianViews
+        : null,
+    velocityVsChannel:
+      baseline && baseline.medianViewsPerDay > 0
+        ? viewCount / daysSince / baseline.medianViewsPerDay
+        : null,
+    baselineSample: baseline ? baseline.sampleSize : null,
     likesPer1K: per1K(likeCount > 0 ? likeCount : null, viewCount), // 0 likes = hidden/unavailable
     commentsPer1K: per1K(commentCount, viewCount),
     score: scoreValue !== null ? scoreValue.toFixed(1) : null,
@@ -127,14 +144,21 @@ export const engagementNote = (m: ComputedMetrics): string => {
   return `${formatLarge(m.likeCount)} likes · ${formatLarge(m.commentCount)} comments`;
 };
 
+export const NO_BASELINE_TEXT = "Not enough channel data available";
+
 export const NO_SCORE_TEXT = "Not enough data available";
 
 // Re-derive the score fields for metrics saved earlier: older saves used a 1000-subscriber
 // fallback for virality and a likes-only engagement rate (no comment count stored).
 export const withCurrentScore = <T extends ComputedMetrics>(m: T): T => {
   const scoreValue = m.subCount > 0 ? m.viewCount / m.subCount : null;
-  const commentCount =
-    (m as { commentCount?: number | null }).commentCount ?? null;
+  const stored = m as {
+    commentCount?: number | null;
+    viewsVsChannel?: number | null;
+    velocityVsChannel?: number | null;
+    baselineSample?: number | null;
+  };
+  const commentCount = stored.commentCount ?? null;
   const engagement =
     m.viewCount > 0 && m.likeCount > 0 && commentCount !== null
       ? ((m.likeCount + commentCount) / m.viewCount) * 100
@@ -145,6 +169,9 @@ export const withCurrentScore = <T extends ComputedMetrics>(m: T): T => {
     score: scoreValue !== null ? scoreValue.toFixed(1) : null,
     commentCount,
     engagement,
+    viewsVsChannel: stored.viewsVsChannel ?? null,
+    velocityVsChannel: stored.velocityVsChannel ?? null,
+    baselineSample: stored.baselineSample ?? null,
     likesPer1K: per1K(m.likeCount > 0 ? m.likeCount : null, m.viewCount),
     commentsPer1K: per1K(commentCount, m.viewCount),
   };
@@ -197,8 +224,13 @@ export const explainPerformance = (
     parts.push(
       `it has reached ${m.score}x the channel's subscriber count in views`,
     );
-  if (/Viral|Trending|Rising/.test(growth))
+  if (m.velocityVsChannel !== null && m.velocityVsChannel >= 1.5) {
+    parts.push(
+      `it is gaining views ${m.velocityVsChannel.toFixed(1)}x faster than this channel's typical video`,
+    );
+  } else if (/Viral|Trending|Rising/.test(growth)) {
     parts.push(`it is gaining about ${formatLarge(m.velocity)} views per day`);
+  }
   if (m.engagement !== null && m.engagement >= 4)
     parts.push(
       `viewers are engaging strongly (${m.engagement.toFixed(1)}% engagement rate)`,

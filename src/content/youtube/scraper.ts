@@ -1,4 +1,6 @@
 import { parseWatchHtml } from "../../shared/watchPage";
+import { fetchChannelBaseline } from "../../shared/channelFeed";
+import type { ChannelBaseline } from "../../shared/channelFeed";
 
 export interface YouTubeVideoData {
   videoId: string;
@@ -10,6 +12,7 @@ export interface YouTubeVideoData {
   date: string;
   likes: string;
   comments: string; // '' = unknown
+  baseline?: ChannelBaseline | null; // channel medians from the RSS feed (null = not enough data)
 }
 
 export const getVideoData = (): YouTubeVideoData | null => {
@@ -263,6 +266,16 @@ export const getFreshVideoData = async (): Promise<YouTubeVideoData | null> => {
     console.log(
       "ViewStack: comment count not found, engagement rate will show N/A",
     );
+  const baseline = remote.channelId
+    ? await fetchChannelBaseline(remote.channelId, id)
+    : null;
+  if (!baseline)
+    console.log(
+      "ViewStack: no channel baseline (feed unavailable or fewer than 3 older videos)",
+    );
+  // The user may have navigated while the feed was loading.
+  if (currentVideoId() !== id) return getFreshVideoData();
+
   return {
     ...dom,
     title: remote.title || dom.title,
@@ -274,5 +287,6 @@ export const getFreshVideoData = async (): Promise<YouTubeVideoData | null> => {
       : dom.subscribers,
     date: remote.date || dom.date,
     comments,
+    baseline,
   };
 };

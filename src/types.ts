@@ -32,6 +32,11 @@ export interface YouTubeStats {
   date?: string; // New
   likes?: string; // New
   comments?: string;
+  baseline?: {
+    medianViews: number;
+    medianViewsPerDay: number;
+    sampleSize: number;
+  } | null;
 }
 
 export interface ExtensionMessage {
