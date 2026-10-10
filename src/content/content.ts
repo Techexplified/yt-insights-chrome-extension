@@ -1,6 +1,7 @@
 import type { PageViewEvent, ClickEvent } from "../types";
 import { initYouTubeOverlay } from "./youtube/injector";
 import { getFreshVideoData } from "./youtube/scraper";
+import { fetchVideoDataById } from "../shared/videoFetch";
 
 // Helper to send events
 const sendEvent = (event: PageViewEvent | ClickEvent) => {
@@ -103,6 +104,10 @@ const init = () => {
         });
       });
       return true; // keep the channel open for the async response
+    }
+    if (message.type === "FETCH_VIDEO_BY_ID") {
+      fetchVideoDataById(message.payload as string).then(sendResponse);
+      return true;
     }
   });
 };

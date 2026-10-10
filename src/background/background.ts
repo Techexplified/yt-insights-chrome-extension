@@ -1,6 +1,4 @@
 import type { ExtensionMessage, ExtensionState, AnyEvent } from "../types";
-import { parseWatchHtml } from "../shared/watchPage";
-import { fetchChannelBaseline } from "../shared/channelFeed";
 
 let state: ExtensionState = {
   isActive: true,
@@ -34,54 +32,6 @@ chrome.runtime.onMessage.addListener(
       state.isActive = !state.isActive;
       console.log("🔄 Tracking Toggled:", state.isActive ? "Active" : "Paused");
       sendResponse(state);
-    } else if (message.type === "FETCH_VIDEO_DATA") {
-      const url = message.payload as string;
-      fetch(url)
-        .then((res) => res.text())
-        .then(async (html) => {
-          try {
-            const d = parseWatchHtml(html);
-            const idMatch = url.match(
-              /[?&]v=([\w-]{11})|youtu\.be\/([\w-]{11})/,
-            );
-            const videoId = idMatch ? idMatch[1] || idMatch[2] : "";
-
-            const baseline =
-              d.channelId && videoId
-                ? await fetchChannelBaseline(d.channelId, videoId)
-                : null;
-
-            sendResponse({
-              success: true,
-              data: {
-                views: d.views || "0",
-                likes: d.likes || "0",
-                comments: d.comments,
-                subscribers: d.subscribers || "0",
-                title: d.title || "Unknown Video",
-                date: d.date,
-                thumbnailUrl: videoId
-                  ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
-                  : "",
-                channelName: d.channelName,
-                videoId,
-                baseline,
-              },
-            });
-          } catch (e) {
-            console.error("Parse Error", e);
-            sendResponse({
-              success: false,
-              error: "Failed to parse video data",
-            });
-          }
-        })
-        .catch((err) => {
-          console.error("Fetch Error", err);
-          sendResponse({ success: false, error: "Failed to fetch video" });
-        });
-
-      return true; // Async response
     }
 
     // Return true to indicate we wish to send a response asynchronously (even though we're sync here, it's good practice)

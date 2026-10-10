@@ -45,7 +45,7 @@ export interface ExtensionMessage {
     | "GET_STATS"
     | "TOGGLE_TRACKING"
     | "GET_YOUTUBE_STATS"
-    | "FETCH_VIDEO_DATA";
+    | "FETCH_VIDEO_BY_ID";
   payload?: AnyEvent | boolean | YouTubeStats | string;
 }
 

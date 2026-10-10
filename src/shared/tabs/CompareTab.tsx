@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BenchmarkData, ComputedMetrics, VideoData } from "../metrics";
+import { extractVideoId } from "../watchPage";
+import { requestVideoData } from "../videoFetch";
 import {
   BENCHMARK_KEY,
   NO_BASELINE_TEXT,
@@ -31,8 +33,6 @@ interface Row {
   estimated?: boolean;
 }
 
-const looksLikeYouTube = (s: string) => /youtube\.com|youtu\.be/i.test(s);
-
 export const CompareTab = ({
   data,
   metrics,
@@ -48,55 +48,70 @@ export const CompareTab = ({
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState("");
 
+  const videoId = data.videoId ?? "";
+  const videoIdRef = useRef(videoId);
+  videoIdRef.current = videoId;
+
+  // Video B belongs to the video you are watching: it is restored for the same video (for example after closing
+  // and reopening the panel) and discarded as soon as you open a different one.
   useEffect(() => {
+    setBenchmark(null);
+    setSwapped(false);
+    setAdding(false);
+    setLink("");
+    setError("");
     chrome.storage.local.get(BENCHMARK_KEY, (res) => {
-      if (res[BENCHMARK_KEY])
-        setBenchmark(withCurrentScore(res[BENCHMARK_KEY] as BenchmarkData));
+      const saved = res[BENCHMARK_KEY] as
+        | { forVideoId?: string; benchmark?: BenchmarkData }
+        | undefined;
+      if (!saved) return;
+      if (saved.forVideoId === videoId && saved.benchmark)
+        setBenchmark(withCurrentScore(saved.benchmark));
+      else chrome.storage.local.remove(BENCHMARK_KEY); // belongs to another video (or an older format)
     });
-  }, []);
+  }, [videoId]);
 
-  const persist = (b: BenchmarkData) =>
-    chrome.storage.local.set({ [BENCHMARK_KEY]: b }, () => {
-      setBenchmark(b);
-      setAdding(false);
-      setLink("");
-      setError("");
-    });
+  const persist = (b: BenchmarkData, forVideoId: string) =>
+    chrome.storage.local.set(
+      { [BENCHMARK_KEY]: { forVideoId, benchmark: b } },
+      () => {
+        setBenchmark(b);
+        setAdding(false);
+        setLink("");
+        setError("");
+      },
+    );
 
-  const saveCurrent = () =>
-    persist({
-      ...metrics,
-      title: data.title || "Unknown video",
-      thumbnailUrl: data.thumbnailUrl,
-      channelName: data.channelName,
-      savedAt: Date.now(),
-    });
-
-  const analyzeLink = () => {
-    if (!looksLikeYouTube(link)) {
-      setError("Paste a YouTube video URL.");
+  const analyzeLink = async () => {
+    const pastedId = extractVideoId(link);
+    if (!pastedId) {
+      setError("That doesn't look like a YouTube video link.");
+      return;
+    }
+    if (pastedId === videoId) {
+      setError("That is the current video (Video A). Paste a different link.");
       return;
     }
     setFetching(true);
     setError("");
-    chrome.runtime.sendMessage(
-      { type: "FETCH_VIDEO_DATA", payload: link.trim() },
-      (response) => {
-        setFetching(false);
-        void chrome.runtime.lastError;
-        if (response && response.success && response.data) {
-          const v = response.data as VideoData;
-          persist({
-            ...computeMetrics(v),
-            title: v.title || "Unknown video",
-            thumbnailUrl: v.thumbnailUrl,
-            channelName: v.channelName,
-            savedAt: Date.now(),
-          });
-        } else {
-          setError("Could not analyze that video. Check the link.");
-        }
+    const startedOn = videoId;
+    const result = await requestVideoData(pastedId);
+    setFetching(false);
+    if (videoIdRef.current !== startedOn) return; // you opened another video while this was loading
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    const v = result.data;
+    persist(
+      {
+        ...computeMetrics(v),
+        title: v.title || "Unknown video",
+        thumbnailUrl: v.thumbnailUrl,
+        channelName: v.channelName,
+        savedAt: Date.now(),
       },
+      startedOn,
     );
   };
 
@@ -325,39 +340,42 @@ export const CompareTab = ({
               <Icon name="plus" size={14} /> Add video
             </button>
           )}
-          <small>{B ? "Saved as benchmark" : "Paste URL"}</small>
+          {!B && <small>Paste URL</small>}
         </div>
       </div>
 
-      {!B && (
+      {!B && adding && (
         <Card>
-          {adding && (
-            <div className="yti-add-form">
-              <input
-                className="yti-input"
-                placeholder="Paste a YouTube video URL…"
-                value={link}
-                onChange={(e) => setLink(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && analyzeLink()}
-              />
-              <button
-                type="button"
-                className="yti-btn primary"
-                onClick={analyzeLink}
-                disabled={fetching || !link}
-              >
-                {fetching ? "Analyzing…" : "Analyze"}
-              </button>
-            </div>
-          )}
+          <div className="yti-add-form">
+            <input
+              className="yti-input"
+              autoFocus
+              placeholder="Paste the YouTube link of Video B…"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && analyzeLink()}
+            />
+            <button
+              type="button"
+              className="yti-btn primary"
+              onClick={analyzeLink}
+              disabled={fetching || !link}
+            >
+              {fetching ? "Analyzing…" : "Compare"}
+            </button>
+            <button
+              type="button"
+              className="yti-btn"
+              onClick={() => {
+                setAdding(false);
+                setLink("");
+                setError("");
+              }}
+            >
+              Cancel
+            </button>
+          </div>
           {error && <p className="yti-error">{error}</p>}
-          <p className="yti-note left">
-            Tip: save this video as a benchmark, then open another video to
-            compare the two.
-          </p>
-          <button type="button" className="yti-btn" onClick={saveCurrent}>
-            Save current video as benchmark
-          </button>
         </Card>
       )}
 
@@ -506,10 +524,10 @@ export const CompareTab = ({
           )}
         </>
       ) : (
-        <Card title="Key metrics" sample>
+        <Card title="Key metrics">
           <p className="yti-body">
-            Add a second video to see views, views per day, engagement and
-            virality side by side.
+            Paste the link of Video B to compare it with the video you have
+            open.
           </p>
         </Card>
       )}
