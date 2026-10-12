@@ -1,8 +1,5 @@
-import { useMemo, useState } from "react";
-import type { ComputedMetrics, Range, VideoData } from "../metrics";
+import type { ComputedMetrics, VideoData } from "../metrics";
 import {
-  RANGES,
-  buildTrend,
   engagementNote,
   explainPerformance,
   formatLarge,
@@ -10,38 +7,19 @@ import {
   getRankTier,
   NO_BASELINE_TEXT,
   NO_SCORE_TEXT,
-  rangeDays,
-  xLabelsFor,
 } from "../metrics";
-import { AreaChart, Card, Icon, SoonButton } from "../ui";
-import type { TabKey } from "../InsightsPanel";
+import { Card, Icon, SoonButton } from "../ui";
 import { VideoHeader } from "../VideoHeader";
 
 interface Props {
   data: VideoData;
   metrics: ComputedMetrics;
-  onNavigate: (tab: TabKey) => void;
 }
 
-export const OverviewTab = ({ data, metrics, onNavigate }: Props) => {
-  const [range, setRange] = useState<Range>("28D");
+export const OverviewTab = ({ data, metrics }: Props) => {
   const tier = getRankTier(metrics);
   const growth = getGrowthStatus(metrics);
   const why = explainPerformance(metrics);
-
-  const chart = useMemo(() => {
-    const values = buildTrend(range, metrics.viewCount, metrics.daysSince);
-    const end = values[values.length - 1] || 1;
-    const top = metrics.viewCount / end;
-    const yLabels = [top, (top * 2) / 3, top / 3, 0].map((v) =>
-      v === 0 ? "0" : formatLarge(v),
-    );
-    return {
-      values,
-      yLabels,
-      xLabels: xLabelsFor(rangeDays(range, metrics.daysSince)),
-    };
-  }, [range, metrics.viewCount, metrics.daysSince]);
 
   // Velocity compared with the channel's typical video when we have a baseline; otherwise the growth label.
   const vsCh = metrics.velocityVsChannel;
@@ -148,34 +126,7 @@ export const OverviewTab = ({ data, metrics, onNavigate }: Props) => {
         </div>
       </div>
 
-      <div className="yti-grid-main">
-        <Card
-          title="Views over time"
-          action={
-            <select
-              className="yti-select"
-              value={range}
-              onChange={(e) => setRange(e.target.value as Range)}
-            >
-              {RANGES.map((r) => (
-                <option key={r.key} value={r.key}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          }
-        >
-          <AreaChart
-            values={chart.values}
-            color="#ff3b3b"
-            yLabels={chart.yLabels}
-            xLabels={chart.xLabels}
-          />
-          <p className="yti-note">
-            Trend shape is estimated from total views and upload date.
-          </p>
-        </Card>
-
+      <div className="yti-grid-2">
         <Card
           title={why.title}
           action={<Icon name="sparkle" size={16} className="yti-spark" />}
@@ -184,47 +135,6 @@ export const OverviewTab = ({ data, metrics, onNavigate }: Props) => {
           <SoonButton className="yti-btn wide">
             View detailed explanation <Icon name="arrow" size={14} />
           </SoonButton>
-        </Card>
-      </div>
-
-      <div className="yti-grid-2">
-        <Card title="Compared to similar videos" info>
-          <div className="yti-split">
-            <div className="yti-split-cell">
-              <span className="yti-round blue">
-                <Icon name="bars" size={20} />
-              </span>
-              <div>
-                <strong>{tier ? tier.note : "N/A"}</strong>
-                <p>
-                  {tier
-                    ? "Estimated from views ÷ subscribers. Similar-video percentiles are not connected yet."
-                    : NO_SCORE_TEXT +
-                      ": the channel subscriber count is missing."}
-                </p>
-              </div>
-            </div>
-            <div className="yti-split-cell">
-              <span className="yti-round yellow">
-                <Icon name="trophy" size={20} />
-              </span>
-              <div>
-                <strong>{tier ? `${tier.name} tier` : "No tier yet"}</strong>
-                <p>
-                  {tier
-                    ? "Based on views relative to channel size."
-                    : "A tier needs a virality score."}
-                </p>
-              </div>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="yti-btn"
-            onClick={() => onNavigate("compare")}
-          >
-            View benchmark details <Icon name="arrow" size={14} />
-          </button>
         </Card>
 
         <Card title="Key performance drivers">

@@ -56,9 +56,7 @@ export const InsightsPanel = ({
     }
     switch (tab) {
       case "overview":
-        return (
-          <OverviewTab data={data!} metrics={metrics!} onNavigate={setTab} />
-        );
+        return <OverviewTab data={data!} metrics={metrics!} />;
       case "audience":
         return <AudienceTab data={data!} metrics={metrics!} />;
       case "compare":
