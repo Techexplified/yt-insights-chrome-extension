@@ -4,7 +4,6 @@ import {
   explainPerformance,
   formatLarge,
   getGrowthStatus,
-  getRankTier,
   NO_BASELINE_TEXT,
   NO_SCORE_TEXT,
 } from "../metrics";
@@ -17,7 +16,6 @@ interface Props {
 }
 
 export const OverviewTab = ({ data, metrics }: Props) => {
-  const tier = getRankTier(metrics);
   const growth = getGrowthStatus(metrics);
   const why = explainPerformance(metrics);
 
@@ -105,15 +103,10 @@ export const OverviewTab = ({ data, metrics }: Props) => {
         </div>
         <div className="yti-stat">
           <Icon name="star" size={22} className="yti-stat-icon yellow" />
-          {tier && metrics.score !== null ? (
+          {metrics.score !== null ? (
             <div>
               <strong>{metrics.score}x</strong>
-              <span>
-                Virality Score{" "}
-                <b className="yti-tier" style={{ background: tier.color }}>
-                  {tier.name}
-                </b>
-              </span>
+              <span>Virality Score</span>
               <em>Views ÷ subscribers</em>
             </div>
           ) : (
