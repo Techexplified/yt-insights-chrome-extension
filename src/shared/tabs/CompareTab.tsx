@@ -5,7 +5,6 @@ import { requestVideoData } from "../videoFetch";
 import {
   BENCHMARK_KEY,
   NO_BASELINE_TEXT,
-  NO_SCORE_TEXT,
   computeMetrics,
   formatLarge,
   joinList,
@@ -243,13 +242,6 @@ export const CompareTab = ({
             estimated: true,
           },
           { icon: "users", label: "Subscriber conversion", sample: true },
-          {
-            icon: "star",
-            label: "Virality Score",
-            l: left.m.scoreValue ?? undefined,
-            r: right.m.scoreValue ?? undefined,
-            fmt: (v) => v.toFixed(1) + "x",
-          },
         ]
       : [];
 
@@ -262,13 +254,10 @@ export const CompareTab = ({
   if (B) {
     const a = A.m,
       b = B.m;
-    // Virality is only compared when both videos have a score.
-    const scoreComparable = a.scoreValue !== null && b.scoreValue !== null;
     // Engagement is only compared when both videos have a rate.
     const engComparable = a.engagement !== null && b.engagement !== null;
     const wins = [a.viewCount > b.viewCount, a.velocity > b.velocity];
     if (engComparable) wins.push(a.engagement! > b.engagement!);
-    if (scoreComparable) wins.push(a.scoreValue! > b.scoreValue!);
     const leader: "A" | "B" =
       wins.filter(Boolean).length * 2 >= wins.length ? "A" : "B";
     const L = leader === "A" ? a : b,
@@ -282,8 +271,6 @@ export const CompareTab = ({
       ahead.push(
         `engagement (${L.engagement!.toFixed(1)}% vs ${O.engagement!.toFixed(1)}%)`,
       );
-    if (scoreComparable && L.scoreValue! > O.scoreValue!)
-      ahead.push(`virality score (${L.score}x vs ${O.score}x)`);
     if (L.viewCount > O.viewCount)
       ahead.push(
         `total views (${formatLarge(L.viewCount)} vs ${formatLarge(O.viewCount)})`,
@@ -474,18 +461,6 @@ export const CompareTab = ({
                     ? "Video A"
                     : "Video B"}{" "}
                 (likes hidden or comment count unavailable).
-              </p>
-            )}
-            {(metrics.scoreValue === null ||
-              benchmark?.scoreValue === null) && (
-              <p className="yti-note left">
-                Virality Score: {NO_SCORE_TEXT} for{" "}
-                {metrics.scoreValue === null && benchmark?.scoreValue === null
-                  ? "either video"
-                  : metrics.scoreValue === null
-                    ? "Video A"
-                    : "Video B"}{" "}
-                (subscriber count missing).
               </p>
             )}
           </Card>
