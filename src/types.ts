@@ -45,11 +45,17 @@ export interface ExtensionMessage {
     | "GET_STATS"
     | "TOGGLE_TRACKING"
     | "GET_YOUTUBE_STATS"
-    | "FETCH_VIDEO_BY_ID";
-  payload?: AnyEvent | boolean | YouTubeStats | string;
+    | "FETCH_VIDEO_BY_ID"
+    | "FETCH_AUDIENCE";
+  payload?: AnyEvent | boolean | YouTubeStats | string | AudienceRequest;
 }
 
 export interface ExtensionState {
   isActive: boolean;
   eventCount: number;
+}
+
+export interface AudienceRequest {
+  videoId: string;
+  depth: "quick" | "detailed";
 }

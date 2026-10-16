@@ -1054,3 +1054,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Audience tab: backend-driven analysis */
+.yti-footnote {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.yti-detail-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0 6px;
+}
+.yti-back {
+  margin-bottom: 12px;
+}
