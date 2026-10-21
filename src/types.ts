@@ -46,8 +46,15 @@ export interface ExtensionMessage {
     | "TOGGLE_TRACKING"
     | "GET_YOUTUBE_STATS"
     | "FETCH_VIDEO_BY_ID"
-    | "FETCH_AUDIENCE";
-  payload?: AnyEvent | boolean | YouTubeStats | string | AudienceRequest;
+    | "FETCH_AUDIENCE"
+    | "FETCH_OPPORTUNITIES";
+  payload?:
+    | AnyEvent
+    | boolean
+    | YouTubeStats
+    | string
+    | AudienceRequest
+    | OpportunitiesRequest;
 }
 
 export interface ExtensionState {
@@ -58,4 +65,10 @@ export interface ExtensionState {
 export interface AudienceRequest {
   videoId: string;
   depth: "quick" | "detailed";
+}
+
+export interface OpportunitiesRequest {
+  videoId: string;
+  // true = only check whether a fresh result is already cached (no analysis is started)
+  cacheOnly?: boolean;
 }

@@ -3,6 +3,7 @@ import type {
   ExtensionState,
   AnyEvent,
   AudienceRequest,
+  OpportunitiesRequest,
 } from "../types";
 
 let state: ExtensionState = {
@@ -18,7 +19,10 @@ const API_BASE_URL = (
 // The detailed report can take 15-40s. Chrome may stop an idle MV3 service worker while a
 // fetch() is still waiting for its response, so we poke an extension API while a request runs.
 const withKeepAlive = async <T>(work: () => Promise<T>): Promise<T> => {
-  const timer = setInterval(() => void chrome.runtime.getPlatformInfo(), 20_000);
+  const timer = setInterval(
+    () => void chrome.runtime.getPlatformInfo(),
+    20_000,
+  );
   try {
     return await work();
   } finally {
@@ -26,13 +30,12 @@ const withKeepAlive = async <T>(work: () => Promise<T>): Promise<T> => {
   }
 };
 
-const fetchAudience = ({ videoId, depth }: AudienceRequest) =>
+const callApi = (path: string, timeoutMs: number) =>
   withKeepAlive(async () => {
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/videos/${encodeURIComponent(videoId)}/audience?depth=${depth}`,
-        { signal: AbortSignal.timeout(depth === "detailed" ? 180_000 : 90_000) },
-      );
+      const res = await fetch(`${API_BASE_URL}${path}`, {
+        signal: AbortSignal.timeout(timeoutMs),
+      });
       const body = await res.json().catch(() => null);
       if (!res.ok || !body?.success) {
         return {
@@ -48,6 +51,18 @@ const fetchAudience = ({ videoId, depth }: AudienceRequest) =>
       };
     }
   });
+
+const fetchAudience = ({ videoId, depth }: AudienceRequest) =>
+  callApi(
+    `/api/videos/${encodeURIComponent(videoId)}/audience?depth=${depth}`,
+    depth === "detailed" ? 180_000 : 90_000,
+  );
+
+const fetchOpportunities = ({ videoId, cacheOnly }: OpportunitiesRequest) =>
+  callApi(
+    `/api/videos/${encodeURIComponent(videoId)}/opportunities${cacheOnly ? "?cacheOnly=1" : ""}`,
+    cacheOnly ? 20_000 : 180_000,
+  );
 
 // Initialize extension
 chrome.runtime.onInstalled.addListener(() => {
@@ -72,6 +87,10 @@ chrome.runtime.onMessage.addListener(
       }
     } else if (message.type === "FETCH_AUDIENCE") {
       void fetchAudience(message.payload as AudienceRequest).then(sendResponse);
+    } else if (message.type === "FETCH_OPPORTUNITIES") {
+      void fetchOpportunities(message.payload as OpportunitiesRequest).then(
+        sendResponse,
+      );
     } else if (message.type === "GET_STATS") {
       sendResponse(state);
     } else if (message.type === "TOGGLE_TRACKING") {

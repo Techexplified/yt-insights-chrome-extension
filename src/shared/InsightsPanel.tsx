@@ -40,7 +40,10 @@ export const InsightsPanel = ({
   const metrics = useMemo(() => (data ? computeMetrics(data) : null), [data]);
 
   const needsVideo =
-    tab === "overview" || tab === "audience" || tab === "compare";
+    tab === "overview" ||
+    tab === "audience" ||
+    tab === "compare" ||
+    tab === "opportunities";
 
   const renderTab = () => {
     if (needsVideo && loading) {
@@ -62,7 +65,7 @@ export const InsightsPanel = ({
       case "compare":
         return <CompareTab data={data!} metrics={metrics!} />;
       case "opportunities":
-        return <OpportunitiesTab />;
+        return <OpportunitiesTab data={data!} />;
       case "explore":
         return <ExploreTab />;
     }
