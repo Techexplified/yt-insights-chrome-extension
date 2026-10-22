@@ -20,7 +20,8 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "audience", label: "Audience" },
   { key: "compare", label: "Compare" },
   { key: "opportunities", label: "Opportunities" },
-  { key: "explore", label: "Explore" },
+  // Hidden for now. Uncomment to bring the Explore tab back.
+  // { key: "explore", label: "Explore" },
 ];
 
 interface Props {
