@@ -660,6 +660,10 @@
   flex: 1;
   min-width: 0;
 }
+/* Keep round icon badges a fixed size (the rule above would otherwise stretch them) */
+.yti-rows li span.yti-round {
+  flex: none;
+}
 .yti-rows li em {
   font-style: normal;
   color: var(--muted);
