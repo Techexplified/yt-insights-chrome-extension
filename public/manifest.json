@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YT Insights",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tracks YouTube analytics such as views, trends, and comparisons.",
   "permissions": ["storage"],
   "host_permissions": [
