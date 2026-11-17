@@ -476,12 +476,17 @@ export const OpportunitiesTab = ({ data }: { data: VideoData }) => {
             Find topics your audience keeps asking for, and what your recent
             videos haven’t covered yet.
           </p>
-          <button type="button" className="yti-btn primary" onClick={run}>
-            Find opportunities <Icon name="arrow" size={14} />
-          </button>
           <span className="yti-note">
             Analyzes up to 1,000 comments · takes 15–40 seconds
           </span>
+          <button
+            type="button"
+            className="yti-btn primary"
+            style={{ alignSelf: "center" }}
+            onClick={run}
+          >
+            Find opportunities <Icon name="arrow" size={14} />
+          </button>
         </div>
       )}
     </>
