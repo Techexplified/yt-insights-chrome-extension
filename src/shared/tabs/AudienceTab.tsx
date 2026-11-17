@@ -181,7 +181,12 @@ const Message = ({ text, onRetry }: { text: string; onRetry?: () => void }) => (
     <Icon name="alert" size={22} />
     <p>{text}</p>
     {onRetry && (
-      <button type="button" className="yti-btn" onClick={onRetry}>
+      <button
+        type="button"
+        className="yti-btn primary"
+        style={{ alignSelf: "center" }}
+        onClick={onRetry}
+      >
         Try again
       </button>
     )}
