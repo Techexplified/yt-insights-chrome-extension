@@ -483,8 +483,29 @@ export const CompareTab = ({
               <thead>
                 <tr>
                   <th />
-                  <th title={left.title}>{left.label}</th>
-                  <th title={right?.title}>{right?.label}</th>
+                  <th className="yti-table-video-heading" title={left.title}>
+                    <div className="yti-table-video-heading-content">
+                      <div className="yti-table-video-heading-thumb">
+                        {left.thumb && <img src={left.thumb} alt="" />}
+                      </div>
+                      <span className="yti-table-video-heading-title">
+                        {left.title}
+                      </span>
+                    </div>
+                  </th>
+                  <th
+                    className="yti-table-video-heading"
+                    title={right?.title || "Video B"}
+                  >
+                    <div className="yti-table-video-heading-content">
+                      <div className="yti-table-video-heading-thumb">
+                        {right?.thumb && <img src={right.thumb} alt="" />}
+                      </div>
+                      <span className="yti-table-video-heading-title">
+                        {right?.title || "Video B"}
+                      </span>
+                    </div>
+                  </th>
                   <th>Difference</th>
                 </tr>
               </thead>
