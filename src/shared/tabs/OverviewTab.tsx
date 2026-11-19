@@ -48,7 +48,7 @@ export const OverviewTab = ({ data, metrics }: Props) => {
       sub:
         vsCh === null
           ? `About ${formatLarge(metrics.velocity)} views per day since publishing`
-          : `${vsCh.toFixed(1)}× this channel's typical views/day`,
+          : `${vsCh.toFixed(1)}× the recent-uploads typical views/day`,
     },
     {
       tone: engagementTone,
@@ -137,22 +137,11 @@ export const OverviewTab = ({ data, metrics }: Props) => {
                 </div>
               </li>
             ))}
-            <li>
-              <span className="yti-round gray">
-                <Icon name="minus" size={18} />
-              </span>
-              <div>
-                <strong>Subscriber conversion</strong>
-                <p>
-                  Not available yet <span className="yti-sample">Sample</span>
-                </p>
-              </div>
-            </li>
           </ul>
         </Card>
       </div>
 
-      <Card title="Compared to this channel" info estimated>
+      <Card title="Compared to recent uploads" info estimated>
         <div className="yti-per1k">
           <div className="yti-per1k-cell">
             <span className="yti-round blue">
@@ -164,7 +153,7 @@ export const OverviewTab = ({ data, metrics }: Props) => {
                   ? `${metrics.viewsVsChannel.toFixed(1)}×`
                   : "N/A"}
               </strong>
-              <span>views vs a typical video</span>
+              <span>views vs typical recent upload</span>
               {metrics.viewsVsChannel === null && (
                 <small>{NO_BASELINE_TEXT}</small>
               )}
@@ -180,7 +169,7 @@ export const OverviewTab = ({ data, metrics }: Props) => {
                   ? `${metrics.velocityVsChannel.toFixed(1)}×`
                   : "N/A"}
               </strong>
-              <span>views/day vs a typical video</span>
+              <span>views/day vs typical recent upload</span>
               {metrics.velocityVsChannel === null && (
                 <small>{NO_BASELINE_TEXT}</small>
               )}
@@ -189,8 +178,8 @@ export const OverviewTab = ({ data, metrics }: Props) => {
         </div>
         <p className="yti-note left">
           {metrics.baselineSample !== null
-            ? `Typical = the median of this channel's last ${metrics.baselineSample} uploads older than 3 days (Shorts included if the channel posts them).`
-            : "Needs at least 3 recent uploads older than 3 days from this channel."}
+            ? `Typical = the median of this channel's ${metrics.baselineSample} most recent uploads (taken from its latest 15, skipping videos under 3 days old). Not the channel's full history. Shorts are included if the channel posts them.`
+            : "Needs at least 3 of this channel's latest 15 uploads that are older than 3 days."}
         </p>
       </Card>
     </>
