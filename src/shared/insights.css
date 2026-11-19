@@ -1067,10 +1067,41 @@
 }
 .yti-detail-cta {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  justify-content: center;
   margin: 18px 0 6px;
+}
+/* .yti-btn sets align-self: flex-start, so centre this button explicitly */
+.yti-detail-cta .yti-btn {
+  position: relative;
+  align-self: center;
+}
+/* Hover / keyboard-focus tooltip */
+.yti-tip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 280px;
+  padding: 7px 10px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: normal;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  z-index: 5;
+}
+.yti-btn:hover > .yti-tip,
+.yti-btn:focus-visible > .yti-tip {
+  opacity: 1;
+  visibility: visible;
 }
 .yti-back {
   margin-bottom: 12px;

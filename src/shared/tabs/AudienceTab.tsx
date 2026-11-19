@@ -250,12 +250,13 @@ export const AudienceTab = ({
               type="button"
               className="yti-btn primary"
               onClick={() => setView("detailed")}
+              aria-describedby="yti-detail-tip"
             >
               View Detailed Analysis <Icon name="arrow" size={14} />
+              <span id="yti-detail-tip" role="tooltip" className="yti-tip">
+                Analyzes up to 1,000 comments · can take 15–40 seconds
+              </span>
             </button>
-            <span className="yti-note">
-              Analyzes up to 1,000 comments · can take 15–40 seconds
-            </span>
           </div>
         )}
       </>
