@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { BenchmarkData, ComputedMetrics, VideoData } from "../metrics";
 import { extractVideoId } from "../watchPage";
 import { requestVideoData } from "../videoFetch";
@@ -7,12 +7,13 @@ import {
   NO_BASELINE_TEXT,
   computeMetrics,
   formatLarge,
-  joinList,
   pctDiff,
   withCurrentScore,
 } from "../metrics";
 import type { IconName } from "../ui";
-import { Card, Icon, SampleBadge, SoonButton } from "../ui";
+import { Card, Icon } from "../ui";
+import type { CompareContext } from "../../types";
+import { fetchCompare, type CompareSummary } from "../compareApi";
 
 interface Side {
   label: string;
@@ -44,6 +45,13 @@ export const CompareTab = ({
   const [link, setLink] = useState("");
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState("");
+  const [aiComparison, setAiComparison] = useState<CompareSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [details, setDetails] = useState("");
+  const [detailsError, setDetailsError] = useState("");
 
   const videoId = data.videoId ?? "";
   const videoIdRef = useRef(videoId);
@@ -239,53 +247,138 @@ export const CompareTab = ({
       : [];
 
   // Which video leads overall (A vs B, independent of the swap toggle)?
-  let analysis: {
-    leader: "A" | "B";
-    text: string;
-    takeaways: string[];
-  } | null = null;
+  let analysis: { leader: "A" | "B" } | null = null;
   if (B) {
     const a = A.m,
       b = B.m;
-    // Engagement is only compared when both videos have a rate.
+    // Preserve the existing overall-leader calculation; AI explains the evidence behind it.
     const engComparable = a.engagement !== null && b.engagement !== null;
     const wins = [a.viewCount > b.viewCount, a.velocity > b.velocity];
     if (engComparable) wins.push(a.engagement! > b.engagement!);
     const leader: "A" | "B" =
       wins.filter(Boolean).length * 2 >= wins.length ? "A" : "B";
-    const L = leader === "A" ? a : b,
-      O = leader === "A" ? b : a;
-    const ahead: string[] = [];
-    if (L.velocity > O.velocity)
-      ahead.push(
-        `views per day (${formatLarge(L.velocity)} vs ${formatLarge(O.velocity)})`,
-      );
-    if (engComparable && L.engagement! > O.engagement!)
-      ahead.push(
-        `engagement (${L.engagement!.toFixed(1)}% vs ${O.engagement!.toFixed(1)}%)`,
-      );
-    if (L.viewCount > O.viewCount)
-      ahead.push(
-        `total views (${formatLarge(L.viewCount)} vs ${formatLarge(O.viewCount)})`,
-      );
-    let engTakeaway =
-      "Engagement rate can't be compared: likes or comment count is unavailable for one video.";
-    if (engComparable) {
-      const engLead = a.engagement! >= b.engagement! ? "A" : "B";
-      engTakeaway = `Video ${engLead} has the higher engagement rate (${Math.max(a.engagement!, b.engagement!).toFixed(1)}% vs ${Math.min(a.engagement!, b.engagement!).toFixed(1)}%).`;
-    }
-    const reachLead = a.viewCount >= b.viewCount ? "A" : "B";
-    analysis = {
-      leader,
-      text: ahead.length
-        ? `Video ${leader} is ahead on ${joinList(ahead)}.`
-        : `Video ${leader} is slightly ahead overall.`,
-      takeaways: [
-        engTakeaway,
-        `Video ${reachLead} has the larger overall reach (${formatLarge(Math.max(a.viewCount, b.viewCount))} views).`,
-      ],
-    };
+    analysis = { leader };
   }
+
+  const compareContext = useMemo<CompareContext | null>(() => {
+    if (!B || !analysis) return null;
+    const toVideoContext = (side: Side): CompareContext["videoA"] => ({
+      title: side.title,
+      channelName: side.channel ?? "Unknown channel",
+      views: side.m.viewCount,
+      viewsPerDay: side.m.velocity,
+      engagementRatePct: side.m.engagement,
+      viewsVsRecentMedian: side.m.viewsVsChannel,
+      viewsPerDayVsRecentMedian: side.m.velocityVsChannel,
+      likesPer1KViews: side.m.likesPer1K,
+      commentsPer1KViews: side.m.commentsPer1K,
+      daysSincePublished: Math.max(1, Math.floor(side.m.daysSince || 1)),
+      recentUploadsSample: side.m.baselineSample,
+    });
+    return {
+      leader: analysis.leader,
+      videoA: toVideoContext(A),
+      videoB: toVideoContext(B),
+    };
+  }, [data.title, data.channelName, metrics, benchmark, analysis?.leader]);
+  const compareContextKey = compareContext
+    ? JSON.stringify(compareContext)
+    : "";
+
+  const loadSummary = async () => {
+    if (!compareContext || !videoId) return;
+    setSummaryLoading(true);
+    setSummaryError("");
+    const result = await fetchCompare(videoId, compareContext, "summary");
+    if (result.ok && "summary" in result.data) {
+      setAiComparison(result.data);
+    } else {
+      setSummaryError(
+        result.ok
+          ? "The AI comparison returned an unexpected response."
+          : result.error,
+      );
+    }
+    setSummaryLoading(false);
+  };
+
+  useEffect(() => {
+    let active = true;
+    setAiComparison(null);
+    setSummaryError("");
+    setDetailsOpen(false);
+    setDetailsLoading(false);
+    setDetails("");
+    setDetailsError("");
+
+    if (!compareContextKey || !videoId) {
+      setSummaryLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    const context = JSON.parse(compareContextKey) as CompareContext;
+    setSummaryLoading(true);
+    void fetchCompare(videoId, context, "summary").then((result) => {
+      if (!active) return;
+      if (result.ok && "summary" in result.data) {
+        setAiComparison(result.data);
+      } else {
+        setSummaryError(
+          result.ok
+            ? "The AI comparison returned an unexpected response."
+            : result.error,
+        );
+      }
+      setSummaryLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [videoId, compareContextKey]);
+
+  const handleDetailedAnalysis = async () => {
+    if (detailsOpen) {
+      setDetailsOpen(false);
+      return;
+    }
+    if (!compareContext || !videoId) return;
+    setDetailsOpen(true);
+    if (details || detailsLoading) return;
+
+    setDetailsLoading(true);
+    setDetailsError("");
+    const result = await fetchCompare(videoId, compareContext, "detailed");
+    if (result.ok && "explanation" in result.data) {
+      setDetails(result.data.explanation);
+    } else {
+      setDetailsError(
+        result.ok
+          ? "The detailed comparison returned an unexpected response."
+          : result.error,
+      );
+    }
+    setDetailsLoading(false);
+  };
+
+  const retryDetailedAnalysis = async () => {
+    if (!compareContext || !videoId || detailsLoading) return;
+    setDetailsLoading(true);
+    setDetailsError("");
+    const result = await fetchCompare(videoId, compareContext, "detailed");
+    if (result.ok && "explanation" in result.data) {
+      setDetails(result.data.explanation);
+    } else {
+      setDetailsError(
+        result.ok
+          ? "The detailed comparison returned an unexpected response."
+          : result.error,
+      );
+    }
+    setDetailsLoading(false);
+  };
 
   return (
     <>
@@ -457,34 +550,113 @@ export const CompareTab = ({
           </Card>
 
           {analysis && (
-            <div className="yti-grid-2">
+            <div className="yti-grid-2 yti-ai-overview-grid">
               <Card
+                className="yti-ai-card yti-ai-summary-card"
                 title={`Why is Video ${analysis.leader} performing better?`}
-                icon={<Icon name="sparkle" size={16} className="yti-spark" />}
+                icon={
+                  <Icon
+                    name="sparkle"
+                    size={21}
+                    className="yti-ai-spark-icon"
+                  />
+                }
               >
-                <p className="yti-body">{analysis.text}</p>
-                <SoonButton className="yti-btn">
-                  View detailed analysis <Icon name="arrow" size={14} />
-                </SoonButton>
+                {summaryLoading ? (
+                  <div className="yti-ai-status">
+                    <span className="yti-ai-pulse" />
+                    Generating an AI comparison…
+                  </div>
+                ) : summaryError ? (
+                  <div className="yti-ai-error">
+                    <p>{summaryError}</p>
+                    <button
+                      type="button"
+                      className="yti-link"
+                      onClick={() => void loadSummary()}
+                    >
+                      Try again <Icon name="arrow" size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="yti-ai-summary-text">
+                      {aiComparison?.summary}
+                    </p>
+                    <button
+                      type="button"
+                      className="yti-btn yti-ai-detail-btn"
+                      onClick={() => void handleDetailedAnalysis()}
+                      disabled={detailsLoading}
+                    >
+                      {detailsLoading
+                        ? "Generating analysis…"
+                        : detailsOpen && details
+                          ? "Hide detailed analysis"
+                          : "View detailed analysis"}
+                      <Icon name="arrow" size={15} />
+                    </button>
+                    {detailsOpen && detailsLoading && (
+                      <div className="yti-ai-detail-status">
+                        Preparing a more detailed comparison…
+                      </div>
+                    )}
+                    {detailsOpen && detailsError && (
+                      <div className="yti-ai-error yti-ai-detail-error">
+                        <p>{detailsError}</p>
+                        <button
+                          type="button"
+                          className="yti-link"
+                          onClick={() => void retryDetailedAnalysis()}
+                        >
+                          Try again <Icon name="arrow" size={13} />
+                        </button>
+                      </div>
+                    )}
+                    {detailsOpen && details && (
+                      <div className="yti-ai-detail-text">{details}</div>
+                    )}
+                  </>
+                )}
               </Card>
               <Card
+                className="yti-ai-card yti-ai-takeaways-card"
                 title="Key takeaways"
-                icon={<Icon name="doc" size={16} className="yti-muted" />}
+                icon={<Icon name="doc" size={21} className="yti-ai-doc-icon" />}
               >
-                <ol className="yti-takeaways">
-                  {analysis.takeaways.map((t) => (
-                    <li key={t}>
-                      <span className="yti-num sm">
-                        {analysis!.takeaways.indexOf(t) + 1}
-                      </span>
-                      {t}
-                    </li>
-                  ))}
-                  <li>
-                    <span className="yti-num sm">3</span>Audience overlap
-                    insights are not available yet. <SampleBadge />
-                  </li>
-                </ol>
+                {summaryLoading ? (
+                  <div className="yti-ai-takeaway-loading">
+                    <span className="yti-ai-pulse" />
+                    Analysing both videos…
+                  </div>
+                ) : summaryError ? (
+                  <p className="yti-ai-muted">
+                    Key takeaways will appear when the AI comparison is
+                    available.
+                  </p>
+                ) : (
+                  <ul className="yti-ai-takeaways">
+                    {aiComparison?.takeaways.map((takeaway, index) => (
+                      <li key={`${index}-${takeaway.text}`}>
+                        <span className={`yti-ai-bullet ${takeaway.tone}`}>
+                          <Icon
+                            name={
+                              takeaway.tone === "positive"
+                                ? "up"
+                                : takeaway.tone === "negative"
+                                  ? "down"
+                                  : "minus"
+                            }
+                            size={17}
+                          />
+                        </span>
+                        <span className="yti-ai-takeaway-text">
+                          {takeaway.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </Card>
             </div>
           )}

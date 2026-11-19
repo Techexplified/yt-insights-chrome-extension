@@ -5,6 +5,7 @@ import type {
   AudienceRequest,
   OpportunitiesRequest,
   OverviewRequest,
+  CompareRequest,
 } from "../types";
 
 let state: ExtensionState = {
@@ -77,6 +78,17 @@ const fetchOverview = ({ videoId, depth, context }: OverviewRequest) =>
     },
   );
 
+const fetchCompare = ({ videoId, depth, context }: CompareRequest) =>
+  callApi(
+    `/api/videos/${encodeURIComponent(videoId)}/compare`,
+    depth === "detailed" ? 60_000 : 45_000,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ depth, context }),
+    },
+  );
+
 // Initialize extension
 chrome.runtime.onInstalled.addListener(() => {
   console.log("ViewStack Analytics Extension Installed");
@@ -106,6 +118,8 @@ chrome.runtime.onMessage.addListener(
       );
     } else if (message.type === "FETCH_OVERVIEW") {
       void fetchOverview(message.payload as OverviewRequest).then(sendResponse);
+    } else if (message.type === "FETCH_COMPARE") {
+      void fetchCompare(message.payload as CompareRequest).then(sendResponse);
     } else if (message.type === "GET_STATS") {
       sendResponse(state);
     } else if (message.type === "TOGGLE_TRACKING") {

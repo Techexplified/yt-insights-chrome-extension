@@ -48,7 +48,8 @@ export interface ExtensionMessage {
     | "FETCH_VIDEO_BY_ID"
     | "FETCH_AUDIENCE"
     | "FETCH_OPPORTUNITIES"
-    | "FETCH_OVERVIEW";
+    | "FETCH_OVERVIEW"
+    | "FETCH_COMPARE";
   payload?:
     | AnyEvent
     | boolean
@@ -56,7 +57,8 @@ export interface ExtensionMessage {
     | string
     | AudienceRequest
     | OpportunitiesRequest
-    | OverviewRequest;
+    | OverviewRequest
+    | CompareRequest;
 }
 
 export interface ExtensionState {
@@ -95,4 +97,30 @@ export interface OverviewRequest {
   videoId: string;
   depth: "summary" | "detailed";
   context: OverviewContext;
+}
+
+export interface CompareVideoContext {
+  title: string;
+  channelName: string;
+  views: number;
+  viewsPerDay: number;
+  engagementRatePct: number | null;
+  viewsVsRecentMedian: number | null;
+  viewsPerDayVsRecentMedian: number | null;
+  likesPer1KViews: number | null;
+  commentsPer1KViews: number | null;
+  daysSincePublished: number;
+  recentUploadsSample: number | null;
+}
+
+export interface CompareContext {
+  leader: "A" | "B";
+  videoA: CompareVideoContext;
+  videoB: CompareVideoContext;
+}
+
+export interface CompareRequest {
+  videoId: string;
+  depth: "summary" | "detailed";
+  context: CompareContext;
 }
