@@ -47,14 +47,16 @@ export interface ExtensionMessage {
     | "GET_YOUTUBE_STATS"
     | "FETCH_VIDEO_BY_ID"
     | "FETCH_AUDIENCE"
-    | "FETCH_OPPORTUNITIES";
+    | "FETCH_OPPORTUNITIES"
+    | "FETCH_OVERVIEW";
   payload?:
     | AnyEvent
     | boolean
     | YouTubeStats
     | string
     | AudienceRequest
-    | OpportunitiesRequest;
+    | OpportunitiesRequest
+    | OverviewRequest;
 }
 
 export interface ExtensionState {
@@ -71,4 +73,26 @@ export interface OpportunitiesRequest {
   videoId: string;
   // true = only check whether a fresh result is already cached (no analysis is started)
   cacheOnly?: boolean;
+}
+
+export interface OverviewContext {
+  title: string;
+  channelName: string;
+  views: number;
+  likes: number | null;
+  comments: number | null;
+  subscribers: number | null;
+  daysSincePublished: number;
+  viewsPerDay: number;
+  engagementRatePct: number | null;
+  viewsVsRecentMedian: number | null;
+  viewsPerDayVsRecentMedian: number | null;
+  recentUploadsSample: number | null;
+  viewsToSubscribersRatio: number | null;
+}
+
+export interface OverviewRequest {
+  videoId: string;
+  depth: "summary" | "detailed";
+  context: OverviewContext;
 }

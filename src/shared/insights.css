@@ -1172,3 +1172,162 @@
   justify-content: center;
   margin-top: 12px;
 }
+
+/* AI-generated Overview cards */
+.yti-ai-overview-grid {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.95fr);
+}
+.yti-ai-card {
+  min-height: 210px;
+  padding: 18px;
+  gap: 14px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(38, 67, 82, 0.13), transparent 48%),
+    linear-gradient(145deg, rgba(19, 27, 35, 0.98), rgba(15, 22, 29, 0.98));
+  border-color: rgba(65, 82, 99, 0.34);
+}
+.yti-ai-card .yti-card-head h3 {
+  font-size: 16px;
+  gap: 10px;
+}
+.yti-ai-spark-icon {
+  color: #e34bcd;
+  flex: none;
+}
+.yti-ai-doc-icon {
+  color: #18b5ed;
+  flex: none;
+}
+.yti-ai-summary-text {
+  color: #c6d0dd;
+  font-size: 14px;
+  line-height: 1.58;
+  white-space: pre-line;
+}
+.yti-ai-detail-btn {
+  align-self: flex-start;
+  justify-content: space-between;
+  min-width: 255px;
+  padding: 11px 18px;
+  margin-top: auto;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(89, 107, 125, 0.3);
+  font-size: 13px;
+  font-weight: 600;
+}
+.yti-ai-detail-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(113, 137, 160, 0.55);
+}
+.yti-ai-detail-btn:disabled {
+  cursor: progress;
+}
+.yti-ai-takeaways {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.yti-ai-takeaways li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.yti-ai-bullet {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #fff;
+}
+.yti-ai-bullet.positive {
+  background: linear-gradient(145deg, #27c978, #07994f);
+  box-shadow: 0 0 0 3px rgba(24, 185, 102, 0.08);
+}
+.yti-ai-bullet.negative {
+  background: linear-gradient(145deg, #fa6969, #c83e4a);
+  box-shadow: 0 0 0 3px rgba(237, 82, 92, 0.08);
+}
+.yti-ai-bullet.neutral {
+  background: linear-gradient(145deg, #64748b, #3e4a5d);
+  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.08);
+}
+.yti-ai-takeaway-text {
+  color: #c6d0dd;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.yti-ai-status,
+.yti-ai-takeaway-loading,
+.yti-ai-detail-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.yti-ai-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: #35b9e8;
+  box-shadow: 0 0 0 4px rgba(53, 185, 232, 0.13);
+  animation: yti-ai-pulse 1.2s ease-in-out infinite;
+}
+@keyframes yti-ai-pulse {
+  50% {
+    opacity: 0.4;
+    box-shadow: 0 0 0 7px rgba(53, 185, 232, 0.04);
+  }
+}
+.yti-ai-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  color: #ff9292;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.yti-ai-error .yti-link {
+  padding: 0;
+}
+.yti-ai-muted {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.yti-ai-detail-status {
+  padding: 8px 0 2px;
+}
+.yti-ai-detail-text {
+  padding: 12px 14px;
+  border: 1px solid rgba(89, 107, 125, 0.24);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.12);
+  color: #bac5d3;
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+.yti-ai-detail-error {
+  padding-top: 8px;
+}
+@media (max-width: 720px) {
+  .yti-ai-overview-grid {
+    grid-template-columns: 1fr;
+  }
+  .yti-ai-detail-btn {
+    min-width: 0;
+    width: 100%;
+  }
+}

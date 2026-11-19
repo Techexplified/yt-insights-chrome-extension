@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import type { ComputedMetrics, VideoData } from "../metrics";
 import {
   engagementNote,
@@ -6,7 +7,9 @@ import {
   getGrowthStatus,
   NO_BASELINE_TEXT,
 } from "../metrics";
-import { Card, Icon, SoonButton } from "../ui";
+import { fetchOverview, type OverviewSummary } from "../overviewApi";
+import type { OverviewContext } from "../../types";
+import { Card, Icon } from "../ui";
 import { VideoHeader } from "../VideoHeader";
 
 interface Props {
@@ -18,54 +21,148 @@ export const OverviewTab = ({ data, metrics }: Props) => {
   const growth = getGrowthStatus(metrics);
   const why = explainPerformance(metrics);
 
-  // Velocity compared with the channel's typical video when we have a baseline; otherwise the growth label.
-  const vsCh = metrics.velocityVsChannel;
-  const velocityTone =
-    vsCh !== null
-      ? vsCh >= 1.5
-        ? "up"
-        : vsCh >= 0.7
-          ? "flat"
-          : "down"
-      : /Viral|Trending|Rising/.test(growth.label)
-        ? "up"
-        : "flat";
-  const eng = metrics.engagement;
-  const engagementTone =
-    eng === null ? "flat" : eng >= 4 ? "up" : eng >= 2 ? "flat" : "down";
+  const overviewContext = useMemo<OverviewContext>(
+    () => ({
+      title: data.title ?? "Untitled video",
+      channelName: data.channelName ?? "Unknown channel",
+      views: metrics.viewCount,
+      // A zero like count is treated as hidden/unavailable by the scraper.
+      likes: metrics.likeCount > 0 ? metrics.likeCount : null,
+      comments: metrics.commentCount,
+      subscribers: metrics.subCount > 0 ? metrics.subCount : null,
+      daysSincePublished: metrics.daysSince,
+      viewsPerDay: metrics.velocity,
+      engagementRatePct: metrics.engagement,
+      viewsVsRecentMedian: metrics.viewsVsChannel,
+      viewsPerDayVsRecentMedian: metrics.velocityVsChannel,
+      recentUploadsSample: metrics.baselineSample,
+      viewsToSubscribersRatio: metrics.scoreValue,
+    }),
+    [data.title, data.channelName, metrics],
+  );
 
-  const drivers = [
-    {
-      tone: velocityTone,
-      title:
-        vsCh === null
-          ? "Views velocity"
-          : velocityTone === "up"
-            ? "High velocity"
-            : velocityTone === "flat"
-              ? "Typical velocity"
-              : "Below-average velocity",
-      sub:
-        vsCh === null
-          ? `About ${formatLarge(metrics.velocity)} views per day since publishing`
-          : `${vsCh.toFixed(1)}× the recent-uploads typical views/day`,
-    },
-    {
-      tone: engagementTone,
-      title:
-        eng === null
-          ? "Engagement unavailable"
-          : engagementTone === "up"
-            ? "Strong engagement"
-            : engagementTone === "flat"
-              ? "Typical engagement"
-              : "Low engagement",
-      sub:
-        eng === null
-          ? engagementNote(metrics)
-          : `${eng.toFixed(1)}% (likes + comments ÷ views)`,
-    },
-  ];
+  const [aiOverview, setAiOverview] = useState<OverviewSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [details, setDetails] = useState("");
+  const [detailsError, setDetailsError] = useState("");
+
+  const loadSummary = async () => {
+    if (!data.videoId) {
+      setSummaryError(
+        "Video details are unavailable, so the AI overview cannot be generated.",
+      );
+      setSummaryLoading(false);
+      return;
+    }
+    setSummaryLoading(true);
+    setSummaryError("");
+    const result = await fetchOverview(
+      data.videoId,
+      overviewContext,
+      "summary",
+    );
+    if (result.ok && "summary" in result.data) {
+      setAiOverview(result.data);
+    } else {
+      setSummaryError(
+        result.ok
+          ? "The AI overview returned an unexpected response."
+          : result.error,
+      );
+    }
+    setSummaryLoading(false);
+  };
+
+  useEffect(() => {
+    let active = true;
+    setAiOverview(null);
+    setSummaryError("");
+    setSummaryLoading(true);
+    setDetailsOpen(false);
+    setDetails("");
+    setDetailsError("");
+
+    if (!data.videoId) {
+      setSummaryError(
+        "Video details are unavailable, so the AI overview cannot be generated.",
+      );
+      setSummaryLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    void fetchOverview(data.videoId, overviewContext, "summary").then(
+      (result) => {
+        if (!active) return;
+        if (result.ok && "summary" in result.data) {
+          setAiOverview(result.data);
+        } else {
+          setSummaryError(
+            result.ok
+              ? "The AI overview returned an unexpected response."
+              : result.error,
+          );
+        }
+        setSummaryLoading(false);
+      },
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [data.videoId, overviewContext]);
+
+  const handleDetailedExplanation = async () => {
+    if (detailsOpen) {
+      setDetailsOpen(false);
+      return;
+    }
+    setDetailsOpen(true);
+    if (details || detailsLoading || !data.videoId) return;
+
+    setDetailsLoading(true);
+    setDetailsError("");
+    const result = await fetchOverview(
+      data.videoId,
+      overviewContext,
+      "detailed",
+    );
+    if (result.ok && "explanation" in result.data) {
+      setDetails(result.data.explanation);
+    } else {
+      setDetailsError(
+        result.ok
+          ? "The detailed explanation returned an unexpected response."
+          : result.error,
+      );
+    }
+    setDetailsLoading(false);
+  };
+
+  const retryDetailedExplanation = async () => {
+    if (!data.videoId || detailsLoading) return;
+    setDetailsLoading(true);
+    setDetailsError("");
+    const result = await fetchOverview(
+      data.videoId,
+      overviewContext,
+      "detailed",
+    );
+    if (result.ok && "explanation" in result.data) {
+      setDetails(result.data.explanation);
+    } else {
+      setDetailsError(
+        result.ok
+          ? "The detailed explanation returned an unexpected response."
+          : result.error,
+      );
+    }
+    setDetailsLoading(false);
+  };
 
   return (
     <>
@@ -102,42 +199,107 @@ export const OverviewTab = ({ data, metrics }: Props) => {
         </div>
       </div>
 
-      <div className="yti-grid-2">
+      <div className="yti-grid-2 yti-ai-overview-grid">
         <Card
-          title={why.title}
-          action={<Icon name="sparkle" size={16} className="yti-spark" />}
+          className="yti-ai-card yti-ai-summary-card"
+          title={
+            why.good
+              ? "Why is this video performing well?"
+              : "How is this video performing?"
+          }
+          icon={<Icon name="sparkle" size={21} className="yti-ai-spark-icon" />}
         >
-          <p className="yti-body">{why.text}</p>
-          <SoonButton className="yti-btn wide">
-            View detailed explanation <Icon name="arrow" size={14} />
-          </SoonButton>
+          {summaryLoading ? (
+            <div className="yti-ai-status">
+              <span className="yti-ai-pulse" />
+              Generating an AI overview…
+            </div>
+          ) : summaryError ? (
+            <div className="yti-ai-error">
+              <p>{summaryError}</p>
+              <button
+                type="button"
+                className="yti-link"
+                onClick={() => void loadSummary()}
+              >
+                Try again <Icon name="arrow" size={13} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="yti-ai-summary-text">{aiOverview?.summary}</p>
+              <button
+                type="button"
+                className="yti-btn yti-ai-detail-btn"
+                onClick={() => void handleDetailedExplanation()}
+                disabled={detailsLoading}
+              >
+                {detailsLoading
+                  ? "Generating explanation…"
+                  : detailsOpen && details
+                    ? "Hide detailed explanation"
+                    : "View detailed explanation"}
+                <Icon name="arrow" size={15} />
+              </button>
+              {detailsOpen && detailsLoading && (
+                <div className="yti-ai-detail-status">
+                  Preparing a more detailed analysis…
+                </div>
+              )}
+              {detailsOpen && detailsError && (
+                <div className="yti-ai-error yti-ai-detail-error">
+                  <p>{detailsError}</p>
+                  <button
+                    type="button"
+                    className="yti-link"
+                    onClick={() => void retryDetailedExplanation()}
+                  >
+                    Try again <Icon name="arrow" size={13} />
+                  </button>
+                </div>
+              )}
+              {detailsOpen && details && (
+                <div className="yti-ai-detail-text">{details}</div>
+              )}
+            </>
+          )}
         </Card>
 
-        <Card title="Key performance drivers">
-          <ul className="yti-drivers">
-            {drivers.map((d) => (
-              <li key={d.title}>
-                <span
-                  className={`yti-round ${d.tone === "up" ? "green" : d.tone === "down" ? "red" : "gray"}`}
-                >
-                  <Icon
-                    name={
-                      d.tone === "up"
-                        ? "up"
-                        : d.tone === "down"
-                          ? "down"
-                          : "minus"
-                    }
-                    size={18}
-                  />
-                </span>
-                <div>
-                  <strong>{d.title}</strong>
-                  <p>{d.sub}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+        <Card
+          className="yti-ai-card yti-ai-takeaways-card"
+          title="Key takeaways"
+          icon={<Icon name="doc" size={21} className="yti-ai-doc-icon" />}
+        >
+          {summaryLoading ? (
+            <div className="yti-ai-takeaway-loading">
+              <span className="yti-ai-pulse" />
+              Analysing the available metrics…
+            </div>
+          ) : summaryError ? (
+            <p className="yti-ai-muted">
+              Key takeaways will appear when the AI overview is available.
+            </p>
+          ) : (
+            <ul className="yti-ai-takeaways">
+              {aiOverview?.takeaways.map((takeaway, index) => (
+                <li key={`${index}-${takeaway.text}`}>
+                  <span className={`yti-ai-bullet ${takeaway.tone}`}>
+                    <Icon
+                      name={
+                        takeaway.tone === "positive"
+                          ? "up"
+                          : takeaway.tone === "negative"
+                            ? "down"
+                            : "minus"
+                      }
+                      size={17}
+                    />
+                  </span>
+                  <span className="yti-ai-takeaway-text">{takeaway.text}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
       </div>
 
